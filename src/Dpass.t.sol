@@ -29,19 +29,17 @@ contract DpassTest is DSTest {
         assertTrue(true);
     }
 
-    // function test_symbol_func() public {
-    //     // dpass.symbol();
-    //     string memory r = dpass.symbol();
-    //     assertEq0(r, "DP");
-    // }
+    function test_symbol_func() public {
+        assertEq0(bytes(dpass.symbol()), bytes("DP"));
+    }
 
     function test_diamond_balance() public {
-        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, "");
+        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000);
         assertEq(dpass.balanceOf(address(user)), 1);
     }
 
-    function test_diamond_cart_weight() public {
-        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, "");
-        assertEq(dpass.diamondCaratByIndex(0), 710000000000000000);
+    function test_diamond_gia() public {
+        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000);
+        assertEq0(bytes(dpass.getDiamondGia(0)), bytes("7296159262"));
     }
 }

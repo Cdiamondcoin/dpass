@@ -55,7 +55,7 @@ contract Dpass is ERC721Full {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @return Returns all the relevant information about a specific diamond
      */
-    function getDiamond(uint256 _tokenId) public view returns(string memory gia, uint carat_weight) {
+    function getDiamond(uint256 _tokenId) public view returns (string memory gia, uint carat_weight) {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
@@ -69,7 +69,7 @@ contract Dpass is ERC721Full {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @return Gia information about a specific diamond
      */
-    function diamondCaratByIndex(uint256 _tokenId) public view returns (uint) {
+    function getDiamondGia(uint256 _tokenId) public view returns (string memory) {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
