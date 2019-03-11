@@ -35,7 +35,7 @@ contract Dpass is ERC721Full {
         uint256 _tokenId = _createDiamond(_gia, _carat_weight);
 
         super._mint(_to, _tokenId);
-        super._setTokenURI(_tokenId);
+        // super._setTokenURI(_tokenId, _uri);
     }
 
     function _createDiamond(string memory _gia, uint _carat_weight) internal returns (uint) {
