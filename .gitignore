@@ -1,1 +1,7 @@
-/out
+build/
+out/
+
+.DS_Store
+*.swp
+*.keystore
+env
