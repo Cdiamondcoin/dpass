@@ -36,3 +36,7 @@ echo -e "DPASS DEPLOYED AT: $DPASS\n"
 # seth send 0x9537040cd32ed8abd5f04fbb7b83f619626a5079 "mintDiamondTo(address, string memory, uint, string memory)" 0x9556E25F9b4D343ee38348b6Db8691d10fD08A61 "7296159263" 00000000000000000000000000000000000000000000000009da6d3cfe870000 ""
 # seth call 0x9537040cd32ed8abd5f04fbb7b83f619626a5079 "diamondCaratByIndex(uint)" 0
 # seth --from-wei $(seth --to-dec $(seth call 0x9537040cd32ed8abd5f04fbb7b83f619626a5079 "diamondCaratByIndex(uint)" 0))
+
+
+# Verify code on Etherscan
+# hevm flatten --source-file src/Dpass.sol --json-file out/Dpass.sol.json > Dpass-flatt.sol

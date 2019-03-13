@@ -34,12 +34,12 @@ contract DpassTest is DSTest {
     }
 
     function test_diamond_balance() public {
-        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000);
+        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, 1 ether);
         assertEq(dpass.balanceOf(address(user)), 1);
     }
 
     function test_diamond_gia() public {
-        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000);
+        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, 1 ether);
         assertEq0(bytes(dpass.getDiamondGia(0)), bytes("7296159262"));
     }
 }

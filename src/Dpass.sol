@@ -16,6 +16,7 @@ contract Dpass is ERC721Full {
     struct Diamond {
         string gia;
         uint carat_weight;
+        uint price;
     }
 
     Diamond[] diamonds;
@@ -31,17 +32,18 @@ contract Dpass is ERC721Full {
     * @param _carat_weight uint diamond carat weight
     * @return Return Diamond tokenId of the diamonds list
     */
-    function mintDiamondTo(address _to, string memory _gia, uint _carat_weight) public {
-        uint256 _tokenId = _createDiamond(_gia, _carat_weight);
+    function mintDiamondTo(address _to, string memory _gia, uint _carat_weight, uint _price) public {
+        uint256 _tokenId = _createDiamond(_gia, _carat_weight, _price);
 
         super._mint(_to, _tokenId);
         // super._setTokenURI(_tokenId, _uri);
     }
 
-    function _createDiamond(string memory _gia, uint _carat_weight) internal returns (uint) {
+    function _createDiamond(string memory _gia, uint _carat_weight, uint _price) internal returns (uint) {
         Diamond memory _diamond = Diamond({
             gia: _gia,
-            carat_weight: _carat_weight
+            carat_weight: _carat_weight,
+            price: _price
         });
 
         uint256 newDiamondId = diamonds.push(_diamond) - 1;
@@ -55,12 +57,13 @@ contract Dpass is ERC721Full {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @return Returns all the relevant information about a specific diamond
      */
-    function getDiamond(uint256 _tokenId) public view returns (string memory gia, uint carat_weight) {
+    function getDiamond(uint256 _tokenId) public view returns (string memory gia, uint carat_weight, uint price) {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
         gia = _diamond.gia;
         carat_weight = _diamond.carat_weight;
+        price = _diamond.price;
     }
 
     /**
