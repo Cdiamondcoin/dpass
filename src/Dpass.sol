@@ -6,10 +6,11 @@ pragma solidity ^0.5.4;
 //  *
 //  */
 
+import "ds-auth/auth.sol";
 import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 
 
-contract Dpass is ERC721Full {
+contract Dpass is DSAuth, ERC721Full {
     string private _name = "Diamond Passport (Dpass)";
     string private _symbol = "DP";
 
@@ -32,7 +33,7 @@ contract Dpass is ERC721Full {
     * @param _carat_weight uint diamond carat weight
     * @return Return Diamond tokenId of the diamonds list
     */
-    function mintDiamondTo(address _to, string memory _gia, uint _carat_weight, uint _price) public {
+    function mintDiamondTo(address _to, string memory _gia, uint _carat_weight, uint _price) public auth {
         uint256 _tokenId = _createDiamond(_gia, _carat_weight, _price);
 
         super._mint(_to, _tokenId);

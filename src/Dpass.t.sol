@@ -42,4 +42,9 @@ contract DpassTest is DSTest {
         dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, 1 ether);
         assertEq0(bytes(dpass.getDiamondGia(0)), bytes("7296159262"));
     }
+
+    function testFail_non_owner() public {
+        dpass.setOwner(address(0));
+        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, 1 ether);
+    }
 }
