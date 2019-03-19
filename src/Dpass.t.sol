@@ -30,7 +30,7 @@ contract DpassTest is DSTest {
     }
 
     function test_symbol_func() public {
-        assertEq0(bytes(dpass.symbol()), bytes("DPASS"));
+        assertEq0(bytes(dpass.symbol()), bytes("DPAS"));
     }
 
     function test_diamond_balance() public {

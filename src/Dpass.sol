@@ -12,7 +12,7 @@ import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 
 contract Dpass is DSAuth, ERC721Full {
     string private _name = "Diamond Passport";
-    string private _symbol = "DPASS";
+    string private _symbol = "DPAS";
 
     struct Diamond {
         string gia;
