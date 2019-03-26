@@ -11,8 +11,8 @@ import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 
 
 contract Dpass is DSAuth, ERC721Full {
-    string private _name = "Diamond Passport";
-    string private _symbol = "DPAS";
+    string private _name = "CDC Passport";
+    string private _symbol = "CDC PASS";
 
     struct Diamond {
         string gia;
@@ -30,7 +30,8 @@ contract Dpass is DSAuth, ERC721Full {
     * @dev Custom accessor to create a unique token
     * @param _to address of diamond owner
     * @param _gia string diamond GIA agency unique Nr.
-    * @param _carat_weight uint diamond carat weight
+    * @param _carat_weight uint diamond carat weight (4 decimals) format 10**4 (ex 0.71 carat is 71000)
+    * @param _price uint diamond price
     * @return Return Diamond tokenId of the diamonds list
     */
     function mintDiamondTo(address _to, string memory _gia, uint _carat_weight, uint _price) public auth {

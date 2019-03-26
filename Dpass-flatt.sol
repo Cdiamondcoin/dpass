@@ -1,5 +1,75 @@
 // hevm: flattened sources of src/Dpass.sol
-pragma solidity >=0.5.2 <0.6.0 >=0.5.4 <0.6.0;
+pragma solidity >=0.4.23 >=0.5.2 <0.6.0 >=0.5.4 <0.6.0;
+
+////// lib/ds-auth/src/auth.sol
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+/* pragma solidity >=0.4.23; */
+
+contract DSAuthority {
+    function canCall(
+        address src, address dst, bytes4 sig
+    ) public view returns (bool);
+}
+
+contract DSAuthEvents {
+    event LogSetAuthority (address indexed authority);
+    event LogSetOwner     (address indexed owner);
+}
+
+contract DSAuth is DSAuthEvents {
+    DSAuthority  public  authority;
+    address      public  owner;
+
+    constructor() public {
+        owner = msg.sender;
+        emit LogSetOwner(msg.sender);
+    }
+
+    function setOwner(address owner_)
+        public
+        auth
+    {
+        owner = owner_;
+        emit LogSetOwner(owner);
+    }
+
+    function setAuthority(DSAuthority authority_)
+        public
+        auth
+    {
+        authority = authority_;
+        emit LogSetAuthority(address(authority));
+    }
+
+    modifier auth {
+        require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
+        _;
+    }
+
+    function isAuthorized(address src, bytes4 sig) internal view returns (bool) {
+        if (src == address(this)) {
+            return true;
+        } else if (src == owner) {
+            return true;
+        } else if (authority == DSAuthority(0)) {
+            return false;
+        } else {
+            return authority.canCall(src, address(this), sig);
+        }
+    }
+}
 
 ////// lib/openzeppelin-solidity/src/math/SafeMath.sol
 /* pragma solidity ^0.5.2; */
@@ -891,12 +961,13 @@ contract ERC721Full is ERC721, ERC721Enumerable, ERC721Metadata {
 //  *
 //  */
 
+/* import "ds-auth/auth.sol"; */
 /* import "openzeppelin-solidity/token/ERC721/ERC721Full.sol"; */
 
 
-contract Dpass is ERC721Full {
-    string private _name = "Diamond Passport (Dpass)";
-    string private _symbol = "DP";
+contract Dpass is DSAuth, ERC721Full {
+    string private _name = "CDC Passport";
+    string private _symbol = "CDC PASS";
 
     struct Diamond {
         string gia;
@@ -914,10 +985,11 @@ contract Dpass is ERC721Full {
     * @dev Custom accessor to create a unique token
     * @param _to address of diamond owner
     * @param _gia string diamond GIA agency unique Nr.
-    * @param _carat_weight uint diamond carat weight
+    * @param _carat_weight uint diamond carat weight (4 decimals) format 10**4 (ex 0.71 carat is 71000)
+    * @param _price uint diamond price
     * @return Return Diamond tokenId of the diamonds list
     */
-    function mintDiamondTo(address _to, string memory _gia, uint _carat_weight, uint _price) public {
+    function mintDiamondTo(address _to, string memory _gia, uint _carat_weight, uint _price) public auth {
         uint256 _tokenId = _createDiamond(_gia, _carat_weight, _price);
 
         super._mint(_to, _tokenId);

@@ -30,21 +30,21 @@ contract DpassTest is DSTest {
     }
 
     function test_symbol_func() public {
-        assertEq0(bytes(dpass.symbol()), bytes("DPAS"));
+        assertEq0(bytes(dpass.symbol()), bytes("CDC PASS"));
     }
 
     function test_diamond_balance() public {
-        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, 1 ether);
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
         assertEq(dpass.balanceOf(address(user)), 1);
     }
 
     function test_diamond_gia() public {
-        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, 1 ether);
-        assertEq0(bytes(dpass.getDiamondGia(0)), bytes("7296159262"));
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+        assertEq0(bytes(dpass.getDiamondGia(0)), bytes("GIA1"));
     }
 
     function testFail_non_owner() public {
         dpass.setOwner(address(0));
-        dpass.mintDiamondTo(address(user), "7296159262", 710000000000000000, 1 ether);
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
     }
 }
