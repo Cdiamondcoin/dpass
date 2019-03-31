@@ -28,6 +28,9 @@ test -z $NETWORK && exit 1
 
 dapp build
 
+# Flatt contract to verify
+hevm flatten --source-file src/Dpass.sol --json-file out/Dpass.sol.json > out/Dpass-flatt.sol
+
 DPASS=$(dapp create Dpass)
 
 echo -e "DPASS DEPLOYED AT: $DPASS\n"
@@ -39,4 +42,4 @@ echo -e "DPASS DEPLOYED AT: $DPASS\n"
 
 
 # Verify code on Etherscan
-# hevm flatten --source-file src/Dpass.sol --json-file out/Dpass.sol.json > Dpass-flatt.sol
+# hevm flatten --source-file src/Dpass.sol --json-file out/Dpass.sol.json > out/Dpass-flatt.sol

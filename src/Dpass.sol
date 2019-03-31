@@ -10,7 +10,23 @@ import "ds-auth/auth.sol";
 import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 
 
-contract Dpass is DSAuth, ERC721Full {
+contract DpassEvents {
+    event LogPriceChanged(
+        uint token_id,
+        uint price
+    );
+
+    event LogDiamondMinted(
+        address owner,
+        uint token_id,
+        string gia,
+        uint carat_weight,
+        uint price
+    );
+}
+
+
+contract Dpass is DSAuth, ERC721Full, DpassEvents {
     string private _name = "CDC Passport";
     string private _symbol = "CDC PASS";
 
@@ -38,7 +54,7 @@ contract Dpass is DSAuth, ERC721Full {
         uint256 _tokenId = _createDiamond(_gia, _carat_weight, _price);
 
         super._mint(_to, _tokenId);
-        // super._setTokenURI(_tokenId, _uri);
+        emit LogDiamondMinted(_to, _tokenId, _gia, _carat_weight, _price);
     }
 
     function _createDiamond(string memory _gia, uint _carat_weight, uint _price) internal returns (uint) {
@@ -79,5 +95,37 @@ contract Dpass is DSAuth, ERC721Full {
 
         Diamond storage _diamond = diamonds[_tokenId];
         return _diamond.gia;
+    }
+
+    /**
+     * @dev Gets the Diamond price at a given _tokenId
+     * Reverts if the _tokenId is greater or equal to the total number of diamonds
+     * @param _tokenId uint256 representing the index to be accessed of the diamonds list
+     * @return specific diamond price
+     */
+    function getPrice(uint256 _tokenId) public view returns (uint) {
+        require(_tokenId < totalSupply(), "Diamond does not exist");
+
+        Diamond storage _diamond = diamonds[_tokenId];
+        return _diamond.price;
+    }
+
+    /**
+     * @dev Set Diamond price
+     * Reverts if the _tokenId is greater or equal to the total number of diamonds
+     * @param _tokenId uint256 representing the index to be accessed of the diamonds list
+     * @param _price uint256 new price of diamond
+     */
+    function setPrice(uint256 _tokenId, uint _price) public {
+        require(ownerOf(_tokenId) == msg.sender, "Access denied");
+        require(_tokenId < totalSupply(), "Diamond does not exist");
+
+        Diamond storage _diamond = diamonds[_tokenId];
+        uint old_price = _diamond.price;
+        _diamond.price = _price;
+
+        if (old_price != _price) {
+            emit LogPriceChanged(_tokenId, _price);
+        }
     }
 }

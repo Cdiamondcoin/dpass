@@ -32,3 +32,20 @@ hevm flatten --source-file src/Dpass.sol --json-file out/Dpass.sol.json > Dpass-
 ```bash
 solc --version
 ```
+
+
+## Solc versioning
+
+### Build app with selected compiler version
+
+```bash
+dapp --use solc:0.4.24 build
+```
+
+### Install another solc version
+
+Just use non existing version in contract project path
+
+```bash
+dapp --use solc:0.4.25 test
+```

@@ -10,6 +10,10 @@ contract DpassTester {
     constructor(Dpass dpass) public {
         _dpass = dpass;
     }
+
+    function doSetPrice(uint256 token_id, uint price) public {
+        _dpass.setPrice(token_id, price);
+    }
 }
 
 contract DpassTest is DSTest {
@@ -46,5 +50,16 @@ contract DpassTest is DSTest {
     function testFail_non_owner() public {
         dpass.setOwner(address(0));
         dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+    }
+
+    function test_ownership_of_new_diamond() public {
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+        assertEq(dpass.ownerOf(0), address(user));
+    }
+
+    function test_price_change() public {
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+        user.doSetPrice(0, 2 ether);
+        assertEq(dpass.getPrice(0), 2 ether);
     }
 }
