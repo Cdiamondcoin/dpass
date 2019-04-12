@@ -14,6 +14,10 @@ contract DpassTester {
     function doSetPrice(uint256 token_id, uint price) public {
         _dpass.setPrice(token_id, price);
     }
+
+    function doSetSaleStatus(uint256 token_id, bool sale) public {
+        _dpass.setSaleStatus(token_id, sale);
+    }
 }
 
 contract DpassTest is DSTest {
@@ -38,28 +42,39 @@ contract DpassTest is DSTest {
     }
 
     function test_diamond_balance() public {
-        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
         assertEq(dpass.balanceOf(address(user)), 1);
     }
 
     function test_diamond_gia() public {
-        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
         assertEq0(bytes(dpass.getDiamondGia(0)), bytes("GIA1"));
     }
 
     function testFail_non_owner() public {
         dpass.setOwner(address(0));
-        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
     }
 
     function test_ownership_of_new_diamond() public {
-        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
         assertEq(dpass.ownerOf(0), address(user));
     }
 
     function test_price_change() public {
-        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether);
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
         user.doSetPrice(0, 2 ether);
         assertEq(dpass.getPrice(0), 2 ether);
+    }
+
+    function test_sale_status_change() public {
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
+        user.doSetSaleStatus(0, false);
+        string memory gia;
+        uint256 carat;
+        uint256 price;
+        bool sale;
+        (gia, carat, price, sale) = dpass.getDiamond(0);
+        assertTrue(!sale);
     }
 }
