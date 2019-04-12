@@ -18,6 +18,10 @@ contract DpassTester {
     function doSetSaleStatus(uint256 token_id, bool sale) public {
         _dpass.setSaleStatus(token_id, sale);
     }
+
+    function doRedeem(uint token_id) public {
+        _dpass.redeem(token_id);
+    }
 }
 
 contract DpassTest is DSTest {
@@ -74,7 +78,21 @@ contract DpassTest is DSTest {
         uint256 carat;
         uint256 price;
         bool sale;
-        (gia, carat, price, sale) = dpass.getDiamond(0);
+        bool redeemed;
+        (gia, carat, price, sale, redeemed) = dpass.getDiamond(0);
         assertTrue(!sale);
+    }
+
+    function test_redeem_status_change() public {
+        dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
+        user.doRedeem(0);
+        string memory gia;
+        uint256 carat;
+        uint256 price;
+        bool sale;
+        bool redeemed;
+        (gia, carat, price, sale, redeemed) = dpass.getDiamond(0);
+        assertTrue(redeemed);
+        assertEq(dpass.ownerOf(0), dpass.owner());
     }
 }

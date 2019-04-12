@@ -29,6 +29,10 @@ contract DpassEvents {
         uint price,
         bool sale
     );
+
+    event LogRedeem(
+        uint token_id
+    );
 }
 
 
@@ -41,6 +45,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         uint carat_weight;
         uint price;
         bool sale;
+        bool redeemed;
     }
 
     Diamond[] diamonds;
@@ -58,19 +63,36 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @param _sale bool is diamond can be purched
     * @return Return Diamond tokenId of the diamonds list
     */
-    function mintDiamondTo(address _to, string memory _gia, uint _carat_weight, uint _price, bool _sale) public auth {
+    function mintDiamondTo(
+        address _to,
+        string memory _gia,
+        uint _carat_weight,
+        uint _price,
+        bool _sale
+    )
+        public auth
+    {
         uint256 _tokenId = _createDiamond(_gia, _carat_weight, _price, _sale);
 
         super._mint(_to, _tokenId);
         emit LogDiamondMinted(_to, _tokenId, _gia, _carat_weight, _price, _sale);
     }
 
-    function _createDiamond(string memory _gia, uint _carat_weight, uint _price, bool _sale) internal returns (uint) {
+    function _createDiamond(
+        string memory _gia,
+        uint _carat_weight,
+        uint _price,
+        bool _sale
+    )
+        internal
+        returns (uint)
+    {
         Diamond memory _diamond = Diamond({
             gia: _gia,
             carat_weight: _carat_weight,
             price: _price,
-            sale: _sale
+            sale: _sale,
+            redeemed: false
         });
 
         uint256 newDiamondId = diamonds.push(_diamond) - 1;
@@ -84,7 +106,11 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @return Returns all the relevant information about a specific diamond
      */
-    function getDiamond(uint256 _tokenId) public view returns (string memory gia, uint carat_weight, uint price, bool sale) {
+    function getDiamond(uint256 _tokenId)
+        public
+        view
+        returns (string memory gia, uint carat_weight, uint price, bool sale, bool redeemed)
+    {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
@@ -92,6 +118,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         carat_weight = _diamond.carat_weight;
         price = _diamond.price;
         sale = _diamond.sale;
+        redeemed = _diamond.redeemed;
     }
 
     /**
@@ -131,6 +158,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
+
         uint old_price = _diamond.price;
         _diamond.price = _price;
 
@@ -156,5 +184,20 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         if (old_sale != _sale) {
             emit LogSaleStatusChanged(_tokenId, _sale);
         }
+    }
+
+    /**
+     * @dev Make diamond status as redeemed, change owner to contract owner
+     * Reverts if the _tokenId is greater or equal to the total number of diamonds
+     * @param _tokenId uint256 representing the index to be accessed of the diamonds list
+     */
+    function redeem(uint256 _tokenId) public {
+        require(ownerOf(_tokenId) == msg.sender, "Access denied");
+
+        Diamond storage _diamond = diamonds[_tokenId];
+        _diamond.redeemed = true;
+
+        _transferFrom(msg.sender, owner, _tokenId);
+        emit LogRedeem(_tokenId);
     }
 }
