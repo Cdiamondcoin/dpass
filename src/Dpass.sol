@@ -24,7 +24,7 @@ contract DpassEvents {
     event LogDiamondMinted(
         address owner,
         uint token_id,
-        bytes gia,
+        bytes32 gia,
         uint price,
         bool sale
     );
@@ -40,25 +40,25 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     string private _symbol = "CDC PASS";
 
     struct Diamond {
-        bytes gia;
+        bytes32 gia;
         uint price;
         bool sale;
         bool redeemed;
-        bytes carat_weight;
-        bytes measurements;
-        bytes color_grade;
-        bytes clarity_grade;
-        bytes cut_grade;
-        bytes depth;
-        bytes table;
-        bytes crown_angle;
-        bytes crown_height;
-        bytes pavilion_angle;
-        bytes pavilion_depth;
-        bytes star_length;
-        bytes lower_half;
-        bytes girdle;
-        bytes culet;
+        bytes32 carat_weight;
+        bytes32 measurements;
+        bytes32 color_grade;
+        bytes32 clarity_grade;
+        bytes32 cut_grade;
+        bytes32 depth;
+        bytes32 table;
+        bytes32 crown_angle;
+        bytes32 crown_height;
+        bytes32 pavilion_angle;
+        bytes32 pavilion_depth;
+        bytes32 star_length;
+        bytes32 lower_half;
+        bytes32 girdle;
+        bytes32 culet;
     }
 
     Diamond[] diamonds;
@@ -77,10 +77,10 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     */
     function mintDiamondTo(
         address _to,
-        bytes memory _gia,
+        bytes32 _gia,
         uint _price,
         bool _sale,
-        bytes[] attributes
+        bytes32[] memory attributes
     )
         public auth
     {
@@ -89,21 +89,21 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             price: _price,
             sale: _sale,
             redeemed: false,
-            carat_weight: "",
-            measurements: "",
-            color_grade: "",
-            clarity_grade: "",
-            cut_grade: "",
-            depth: "",
-            table: "",
-            crown_angle: "",
-            crown_height: "",
-            pavilion_angle: "",
-            pavilion_depth: "",
-            star_length: "",
-            lower_half: "",
-            girdle: "",
-            culet: ""
+            carat_weight: attributes[0],
+            measurements: attributes[1],
+            color_grade: attributes[2],
+            clarity_grade: attributes[3],
+            cut_grade: attributes[4],
+            depth: attributes[5],
+            table: attributes[6],
+            crown_angle: attributes[7],
+            crown_height: attributes[8],
+            pavilion_angle: attributes[9],
+            pavilion_depth: attributes[10],
+            star_length: attributes[11],
+            lower_half: attributes[12],
+            girdle: attributes[13],
+            culet: attributes[14]
         });
         uint256 _tokenId = diamonds.push(_diamond) - 1;
 
@@ -120,7 +120,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getDiamond(uint256 _tokenId)
         public
         view
-        returns (bytes memory gia, uint price, bool sale, bool redeemed)
+        returns (bytes32 gia, uint price, bool sale, bool redeemed)
     {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
@@ -139,7 +139,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @return Gia information about a specific diamond
      */
-    function getDiamondGia(uint256 _tokenId) public view returns (bytes memory) {
+    function getDiamondGia(uint256 _tokenId) public view returns (bytes32) {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
