@@ -24,7 +24,7 @@ contract DpassEvents {
     event LogDiamondMinted(
         address owner,
         uint token_id,
-        string gia,
+        bytes gia,
         uint carat_weight,
         uint price,
         bool sale
@@ -41,7 +41,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     string private _symbol = "CDC PASS";
 
     struct Diamond {
-        string gia;
+        bytes gia;
         uint carat_weight;
         uint price;
         bool sale;
@@ -65,27 +65,12 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     */
     function mintDiamondTo(
         address _to,
-        string memory _gia,
+        bytes memory _gia,
         uint _carat_weight,
         uint _price,
         bool _sale
     )
         public auth
-    {
-        uint256 _tokenId = _createDiamond(_gia, _carat_weight, _price, _sale);
-
-        super._mint(_to, _tokenId);
-        emit LogDiamondMinted(_to, _tokenId, _gia, _carat_weight, _price, _sale);
-    }
-
-    function _createDiamond(
-        string memory _gia,
-        uint _carat_weight,
-        uint _price,
-        bool _sale
-    )
-        internal
-        returns (uint)
     {
         Diamond memory _diamond = Diamond({
             gia: _gia,
@@ -94,10 +79,10 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             sale: _sale,
             redeemed: false
         });
+        uint256 _tokenId = diamonds.push(_diamond) - 1;
 
-        uint256 newDiamondId = diamonds.push(_diamond) - 1;
-
-        return newDiamondId;
+        super._mint(_to, _tokenId);
+        emit LogDiamondMinted(_to, _tokenId, _gia, _carat_weight, _price, _sale);
     }
 
     /**
@@ -109,7 +94,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getDiamond(uint256 _tokenId)
         public
         view
-        returns (string memory gia, uint carat_weight, uint price, bool sale, bool redeemed)
+        returns (bytes memory gia, uint carat_weight, uint price, bool sale, bool redeemed)
     {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
@@ -127,7 +112,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @return Gia information about a specific diamond
      */
-    function getDiamondGia(uint256 _tokenId) public view returns (string memory) {
+    function getDiamondGia(uint256 _tokenId) public view returns (bytes memory) {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];

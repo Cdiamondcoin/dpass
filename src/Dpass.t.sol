@@ -74,7 +74,7 @@ contract DpassTest is DSTest {
     function test_sale_status_change() public {
         dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
         user.doSetSaleStatus(0, false);
-        string memory gia;
+        bytes memory gia;
         uint256 carat;
         uint256 price;
         bool sale;
@@ -86,7 +86,7 @@ contract DpassTest is DSTest {
     function test_redeem_status_change() public {
         dpass.mintDiamondTo(address(user), "GIA1", 7100, 1 ether, true);
         user.doRedeem(0);
-        string memory gia;
+        bytes memory gia;
         uint256 carat;
         uint256 price;
         bool sale;
