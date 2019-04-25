@@ -25,7 +25,6 @@ contract DpassEvents {
         address owner,
         uint token_id,
         bytes gia,
-        uint carat_weight,
         uint price,
         bool sale
     );
@@ -42,7 +41,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
     struct Diamond {
         bytes gia;
-        uint carat_weight;
         uint price;
         bool sale;
         bool redeemed;
@@ -58,7 +56,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @dev Custom accessor to create a unique token
     * @param _to address of diamond owner
     * @param _gia string diamond GIA agency unique Nr.
-    * @param _carat_weight uint diamond carat weight (4 decimals) format 10**4 (ex 0.71 carat is 71000)
     * @param _price uint diamond price
     * @param _sale bool is diamond can be purched
     * @return Return Diamond tokenId of the diamonds list
@@ -66,7 +63,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function mintDiamondTo(
         address _to,
         bytes memory _gia,
-        uint _carat_weight,
         uint _price,
         bool _sale
     )
@@ -74,7 +70,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     {
         Diamond memory _diamond = Diamond({
             gia: _gia,
-            carat_weight: _carat_weight,
             price: _price,
             sale: _sale,
             redeemed: false
@@ -82,7 +77,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         uint256 _tokenId = diamonds.push(_diamond) - 1;
 
         super._mint(_to, _tokenId);
-        emit LogDiamondMinted(_to, _tokenId, _gia, _carat_weight, _price, _sale);
+        emit LogDiamondMinted(_to, _tokenId, _gia, _price, _sale);
     }
 
     /**
@@ -94,13 +89,12 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getDiamond(uint256 _tokenId)
         public
         view
-        returns (bytes memory gia, uint carat_weight, uint price, bool sale, bool redeemed)
+        returns (bytes memory gia, uint price, bool sale, bool redeemed)
     {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
         gia = _diamond.gia;
-        carat_weight = _diamond.carat_weight;
         price = _diamond.price;
         sale = _diamond.sale;
         redeemed = _diamond.redeemed;
