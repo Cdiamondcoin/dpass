@@ -44,6 +44,21 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         uint price;
         bool sale;
         bool redeemed;
+        bytes carat_weight;
+        bytes measurements;
+        bytes color_grade;
+        bytes clarity_grade;
+        bytes cut_grade;
+        bytes depth;
+        bytes table;
+        bytes crown_angle;
+        bytes crown_height;
+        bytes pavilion_angle;
+        bytes pavilion_depth;
+        bytes star_length;
+        bytes lower_half;
+        bytes girdle;
+        bytes culet;
     }
 
     Diamond[] diamonds;
@@ -64,7 +79,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         address _to,
         bytes memory _gia,
         uint _price,
-        bool _sale
+        bool _sale,
+        bytes[] attributes
     )
         public auth
     {
@@ -72,7 +88,22 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             gia: _gia,
             price: _price,
             sale: _sale,
-            redeemed: false
+            redeemed: false,
+            carat_weight: "",
+            measurements: "",
+            color_grade: "",
+            clarity_grade: "",
+            cut_grade: "",
+            depth: "",
+            table: "",
+            crown_angle: "",
+            crown_height: "",
+            pavilion_angle: "",
+            pavilion_depth: "",
+            star_length: "",
+            lower_half: "",
+            girdle: "",
+            culet: ""
         });
         uint256 _tokenId = diamonds.push(_diamond) - 1;
 
@@ -94,10 +125,12 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
-        gia = _diamond.gia;
-        price = _diamond.price;
-        sale = _diamond.sale;
-        redeemed = _diamond.redeemed;
+        return (
+            _diamond.gia,
+            _diamond.price,
+            _diamond.sale,
+            _diamond.redeemed
+        );
     }
 
     /**
