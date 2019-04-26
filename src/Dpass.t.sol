@@ -93,7 +93,9 @@ contract DpassTest is DSTest {
         uint256 price;
         bool sale;
         bool redeemed;
-        (gia, price, sale, redeemed) = dpass.getDiamond(0);
+        bytes32[] memory attrs;
+
+        (gia, price, sale, redeemed, attrs) = dpass.getDiamond(0);
         assertTrue(!sale);
     }
 
@@ -103,7 +105,9 @@ contract DpassTest is DSTest {
         uint256 price;
         bool sale;
         bool redeemed;
-        (gia, price, sale, redeemed) = dpass.getDiamond(0);
+        bytes32[] memory attrs;
+
+        (gia, price, sale, redeemed, attrs) = dpass.getDiamond(0);
         assertTrue(redeemed);
         assertEq(dpass.ownerOf(0), dpass.owner());
     }

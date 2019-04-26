@@ -120,16 +120,41 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getDiamond(uint256 _tokenId)
         public
         view
-        returns (bytes32 gia, uint price, bool sale, bool redeemed)
+        returns (
+            bytes32 gia,
+            uint price,
+            bool sale,
+            bool redeemed,
+            bytes32[] memory attributes
+        )
     {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
+        bytes32[] memory attrs = new bytes32[](15);
+
+        attrs[0] = _diamond.carat_weight;
+        attrs[1] = _diamond.measurements;
+        attrs[2] = _diamond.color_grade;
+        attrs[3] = _diamond.clarity_grade;
+        attrs[4] = _diamond.cut_grade;
+        attrs[5] = _diamond.depth;
+        attrs[6] = _diamond.table;
+        attrs[7] = _diamond.crown_angle;
+        attrs[8] = _diamond.crown_height;
+        attrs[9] = _diamond.pavilion_angle;
+        attrs[10] = _diamond.pavilion_depth;
+        attrs[11] = _diamond.star_length;
+        attrs[12] = _diamond.lower_half;
+        attrs[13] = _diamond.girdle;
+        attrs[14] = _diamond.culet;
+
         return (
             _diamond.gia,
             _diamond.price,
             _diamond.sale,
-            _diamond.redeemed
+            _diamond.redeemed,
+            attrs
         );
     }
 
