@@ -13,12 +13,6 @@ In order to compile smart contracts you need to install [Dapphub](https://dapphu
 |`git clone --recursive https://github.com/dapphub/dapptools $HOME/.dapp/dapptools` | download `dapp seth solc hevm ethsign` utilities|
 |`nix-env -f $HOME/.dapp/dapptools -iA dapp seth solc hevm ethsign` | install `dapp seth solc hevm ethsign`. This will install utilities for current user only!!|
 
-## Building smart contracts
-
-The `build` command invokes `solc` to compile all code in `src` and `lib` to `out`.
-
-`dapp build`
-
 ## Installing smart contracts
 
 As a result of installation .abi and .bin files will be created in `dpt-token/out/` folder. These files can be installed later on mainnet.
@@ -27,7 +21,14 @@ As a result of installation .abi and .bin files will be created in `dpt-token/ou
 | --- | --- |
 |`git clone https://github.com/Cdiamondcoin/dpass.git` | Clone the smart contract code.|
 |`cd dpass && git submodule update --init --recursive` | Update libraries to the latest version.|
-|`dapp test` | Compile and test the smart contracts.|
+|`cd lib/openzeppelin-solidity/ && ln -s contracts src` | Make openzeppelin lib compatible with dapp tools.|
+|`cd ../../  && dapp test` | Compile and test the smart contracts.|
+
+## Building smart contracts
+
+The `build` command invokes `solc` to compile all code in `src` and `lib` to `out`.
+
+`dapp build`
 
 ## Deploying smart contracts
 

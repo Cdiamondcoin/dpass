@@ -9,28 +9,36 @@ pragma solidity ^0.5.4;
 import "ds-auth/auth.sol";
 import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 
+/**
+* @dev Contract to get Diamond actual attributes list
+*/
+contract AttributeNameList {
+    function get() external view returns (bytes32[] memory);
+}
+
 
 contract DpassEvents {
     event LogPriceChanged(
-        uint token_id,
+        uint tokenId,
         uint price
     );
 
     event LogSaleStatusChanged(
-        uint token_id,
-        bool sale
+        uint tokenId,
+        bytes32 state
     );
 
     event LogDiamondMinted(
         address owner,
-        uint token_id,
-        bytes32 gia,
+        uint indexed tokenId,
+        bytes32 issuer,
+        bytes32 report,
         uint price,
-        bool sale
+        bytes32 state
     );
 
     event LogRedeem(
-        uint token_id
+        uint tokenId
     );
 }
 
@@ -40,28 +48,17 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     string private _symbol = "CDC PASS";
 
     struct Diamond {
-        bytes32 gia;
+        bytes32 issuer;
+        bytes32 report;
         uint price;
-        bool sale;
-        bool redeemed;
-        bytes32 carat_weight;
-        bytes32 measurements;
-        bytes32 color_grade;
-        bytes32 clarity_grade;
-        bytes32 cut_grade;
-        bytes32 depth;
-        bytes32 table;
-        bytes32 crown_angle;
-        bytes32 crown_height;
-        bytes32 pavilion_angle;
-        bytes32 pavilion_depth;
-        bytes32 star_length;
-        bytes32 lower_half;
-        bytes32 girdle;
-        bytes32 culet;
+        bytes32 state;
+
+        bytes32[] attributeNames;
+        bytes32[] attributeValues;
     }
 
     Diamond[] diamonds;
+    AttributeNameList public attributeNameListAddress;
 
     constructor () public ERC721Full(_name, _symbol) {
         // pass
@@ -70,45 +67,42 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     /**
     * @dev Custom accessor to create a unique token
     * @param _to address of diamond owner
-    * @param _gia string diamond GIA agency unique Nr.
+    * @param _issuer string the issuer agency name
+    * @param _report string the issuer agency unique Nr.
     * @param _price uint diamond price
-    * @param _sale bool is diamond can be purched
+    * @param _state diamond state, "sale" is the init status
     * @return Return Diamond tokenId of the diamonds list
     */
     function mintDiamondTo(
         address _to,
-        bytes32 _gia,
+        bytes32 _issuer,
+        bytes32 _report,
         uint _price,
-        bool _sale,
-        bytes32[] memory attributes
+        bytes32 _state,
+        bytes32[] memory _attributes
     )
         public auth
     {
+        bytes32[] memory _attributeNames = getAttributeNames();
+        bytes32[] memory _attributeValues = new bytes32[](_attributeNames.length);
+
+        for (uint i = 0; i < _attributeNames.length; i++) {
+            // _attributeValues.push(_attributes[i]);
+            _attributeValues[i] = _attributes[i];
+        }
+
         Diamond memory _diamond = Diamond({
-            gia: _gia,
+            issuer: _issuer,
+            report: _report,
             price: _price,
-            sale: _sale,
-            redeemed: false,
-            carat_weight: attributes[0],
-            measurements: attributes[1],
-            color_grade: attributes[2],
-            clarity_grade: attributes[3],
-            cut_grade: attributes[4],
-            depth: attributes[5],
-            table: attributes[6],
-            crown_angle: attributes[7],
-            crown_height: attributes[8],
-            pavilion_angle: attributes[9],
-            pavilion_depth: attributes[10],
-            star_length: attributes[11],
-            lower_half: attributes[12],
-            girdle: attributes[13],
-            culet: attributes[14]
+            state: _state,
+            attributeNames: _attributeNames,
+            attributeValues: _attributeValues
         });
         uint256 _tokenId = diamonds.push(_diamond) - 1;
 
         super._mint(_to, _tokenId);
-        emit LogDiamondMinted(_to, _tokenId, _gia, _price, _sale);
+        emit LogDiamondMinted(_to, _tokenId, _issuer, _report, _price, _state);
     }
 
     /**
@@ -121,54 +115,51 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         public
         view
         returns (
-            bytes32 gia,
+            bytes32 issuer,
+            bytes32 report,
             uint price,
-            bool sale,
-            bool redeemed,
-            bytes32[] memory attributes
+            bytes32 state,
+            bytes32[] memory attrib
         )
     {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
-        bytes32[] memory attrs = new bytes32[](15);
-
-        attrs[0] = _diamond.carat_weight;
-        attrs[1] = _diamond.measurements;
-        attrs[2] = _diamond.color_grade;
-        attrs[3] = _diamond.clarity_grade;
-        attrs[4] = _diamond.cut_grade;
-        attrs[5] = _diamond.depth;
-        attrs[6] = _diamond.table;
-        attrs[7] = _diamond.crown_angle;
-        attrs[8] = _diamond.crown_height;
-        attrs[9] = _diamond.pavilion_angle;
-        attrs[10] = _diamond.pavilion_depth;
-        attrs[11] = _diamond.star_length;
-        attrs[12] = _diamond.lower_half;
-        attrs[13] = _diamond.girdle;
-        attrs[14] = _diamond.culet;
-
         return (
-            _diamond.gia,
+            _diamond.issuer,
+            _diamond.report,
             _diamond.price,
-            _diamond.sale,
-            _diamond.redeemed,
-            attrs
+            _diamond.state,
+            _diamond.attributeValues
         );
     }
 
     /**
-     * @dev Gets the Diamond gia number at a given _tokenId of all the diamonds in this contract
+     * @dev Return default diamond attribute names or from external contract
+     * @return array of names
+     */
+    function getAttributeNames() public view returns (bytes32[] memory) {
+        if (attributeNameListAddress == AttributeNameList(0)) {
+            bytes32[] memory names = new bytes32[](2);
+            names[0] = "carat_weight";
+            names[1] = "measurment";
+            return names;
+        } else {
+            return attributeNameListAddress.get();
+        }
+    }
+
+    /**
+     * @dev Gets the Diamond issuer and it unique nr at a given _tokenId of all the diamonds in this contract
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
-     * @return Gia information about a specific diamond
+     * @return Issuer and unique Nr. a specific diamond
      */
-    function getDiamondGia(uint256 _tokenId) public view returns (bytes32) {
+    function getDiamondIssuerAndReport(uint256 _tokenId) public view returns (bytes32, bytes32) {
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
-        return _diamond.gia;
+        return (_diamond.issuer, _diamond.report);
     }
 
     /**
@@ -208,18 +199,17 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @dev Set Diamond sale status
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
-     * @param _sale bool new diamond sale status
      */
-    function setSaleStatus(uint256 _tokenId, bool _sale) public {
+    function setSaleStatus(uint256 _tokenId) public {
         require(ownerOf(_tokenId) == msg.sender, "Access denied");
         require(_tokenId < totalSupply(), "Diamond does not exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
-        bool old_sale = _diamond.sale;
-        _diamond.sale = _sale;
+        bytes32 old_state = _diamond.state;
+        _diamond.state = "sale";
 
-        if (old_sale != _sale) {
-            emit LogSaleStatusChanged(_tokenId, _sale);
+        if (old_state != _diamond.state) {
+            emit LogSaleStatusChanged(_tokenId, _diamond.state);
         }
     }
 
@@ -232,7 +222,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         require(ownerOf(_tokenId) == msg.sender, "Access denied");
 
         Diamond storage _diamond = diamonds[_tokenId];
-        _diamond.redeemed = true;
+        _diamond.state = "redeemed";
 
         _transferFrom(msg.sender, owner, _tokenId);
         emit LogRedeem(_tokenId);
