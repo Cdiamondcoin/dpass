@@ -16,18 +16,7 @@ contract AttributeNameList {
     function get() external view returns (bytes32[] memory);
 }
 
-
 contract DpassEvents {
-    event LogPriceChanged(
-        uint tokenId,
-        uint price
-    );
-
-    event LogSaleStatusChanged(
-        uint tokenId,
-        bytes32 state
-    );
-
     event LogDiamondMinted(
         address owner,
         uint indexed tokenId,
@@ -37,9 +26,11 @@ contract DpassEvents {
         bytes32 state
     );
 
-    event LogRedeem(
-        uint tokenId
-    );
+    event LogPriceChanged(uint indexed tokenId, uint price);
+    event LogSale(uint indexed tokenId);
+    event LogStateChanged(uint indexed tokenId, bytes32 state);
+    event LogRedeem(uint indexed tokenId);
+    event LogSetAttributeNameListAddress(address priceFeed);
 }
 
 
@@ -62,6 +53,16 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
     constructor () public ERC721Full(_name, _symbol) {
         // pass
+    }
+
+    modifier onlyOwnerOf(uint _tokenId) {
+        require(ownerOf(_tokenId) == msg.sender, "Access denied");
+        _;
+    }
+
+    modifier ifExist(uint _tokenId) {
+        require(_tokenId < totalSupply(), "Diamond does not exist");
+        _;
     }
 
     /**
@@ -87,7 +88,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32[] memory _attributeValues = new bytes32[](_attributeNames.length);
 
         for (uint i = 0; i < _attributeNames.length; i++) {
-            // _attributeValues.push(_attributes[i]);
             _attributeValues[i] = _attributes[i];
         }
 
@@ -114,6 +114,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getDiamond(uint256 _tokenId)
         public
         view
+        ifExist(_tokenId)
         returns (
             bytes32 issuer,
             bytes32 report,
@@ -138,12 +139,9 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @dev Return default diamond attribute names or from external contract
      * @return array of names
      */
-    function getAttributeNames() public view returns (bytes32[] memory) {
+    function getAttributeNames() public view returns(bytes32[] memory) {
         if (attributeNameListAddress == AttributeNameList(0)) {
-            bytes32[] memory names = new bytes32[](2);
-            names[0] = "carat_weight";
-            names[1] = "measurment";
-            return names;
+            return _getDefaultAttributeNameList();
         } else {
             return attributeNameListAddress.get();
         }
@@ -155,9 +153,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @return Issuer and unique Nr. a specific diamond
      */
-    function getDiamondIssuerAndReport(uint256 _tokenId) public view returns (bytes32, bytes32) {
-        require(_tokenId < totalSupply(), "Diamond does not exist");
-
+    function getDiamondIssuerAndReport(uint256 _tokenId) public view ifExist(_tokenId) returns(bytes32, bytes32) {
         Diamond storage _diamond = diamonds[_tokenId];
         return (_diamond.issuer, _diamond.report);
     }
@@ -168,11 +164,20 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @return specific diamond price
      */
-    function getPrice(uint256 _tokenId) public view returns (uint) {
-        require(_tokenId < totalSupply(), "Diamond does not exist");
-
+    function getPrice(uint256 _tokenId) public view ifExist(_tokenId) returns(uint) {
         Diamond storage _diamond = diamonds[_tokenId];
         return _diamond.price;
+    }
+
+    /**
+     * @dev Set new attributeNameListAddress contract address
+     * Reverts if invalid address
+     * @param _newAddress new address of AttributeNameList contract
+     */
+    function setAttributeNameListAddress(address _newAddress) public auth {
+        require(_newAddress != address(0), "Wrong address");
+        attributeNameListAddress = AttributeNameList(_newAddress);
+        emit LogSetAttributeNameListAddress(_newAddress);
     }
 
     /**
@@ -181,10 +186,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      * @param _price uint256 new price of diamond
      */
-    function setPrice(uint256 _tokenId, uint _price) public {
-        require(ownerOf(_tokenId) == msg.sender, "Access denied");
-        require(_tokenId < totalSupply(), "Diamond does not exist");
-
+    function setPrice(uint256 _tokenId, uint _price) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
         Diamond storage _diamond = diamonds[_tokenId];
 
         uint old_price = _diamond.price;
@@ -200,17 +202,9 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      */
-    function setSaleStatus(uint256 _tokenId) public {
-        require(ownerOf(_tokenId) == msg.sender, "Access denied");
-        require(_tokenId < totalSupply(), "Diamond does not exist");
-
-        Diamond storage _diamond = diamonds[_tokenId];
-        bytes32 old_state = _diamond.state;
-        _diamond.state = "sale";
-
-        if (old_state != _diamond.state) {
-            emit LogSaleStatusChanged(_tokenId, _diamond.state);
-        }
+    function setSaleStatus(uint256 _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
+        _changeStateTo("sale", _tokenId);
+        emit LogSale(_tokenId);
     }
 
     /**
@@ -218,13 +212,58 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint256 representing the index to be accessed of the diamonds list
      */
-    function redeem(uint256 _tokenId) public {
-        require(ownerOf(_tokenId) == msg.sender, "Access denied");
-
-        Diamond storage _diamond = diamonds[_tokenId];
-        _diamond.state = "redeemed";
-
+    function redeem(uint256 _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
+        _changeStateTo("redeemed", _tokenId);
         _transferFrom(msg.sender, owner, _tokenId);
         emit LogRedeem(_tokenId);
+    }
+
+
+
+    // Private functions
+
+    /**
+     * @dev Return default diamond attribute names
+     * @return array of attrubutes names
+     */
+    function _getDefaultAttributeNameList() internal pure returns (bytes32[] memory) {
+        bytes32[] memory names = new bytes32[](15);
+        names[0] = "carat_weight";
+        names[1] = "measurment";
+        names[2] = "color_grade";
+        names[3] = "clarity_grade";
+        names[4] = "cut_grade";
+        names[5] = "depth";
+        names[6] = "table";
+        names[7] = "crown_angle";
+        names[8] = "crown_height";
+        names[9] = "pavilion_angle";
+        names[10] = "pavilion_depth";
+        names[11] = "star_length";
+        names[12] = "lower_half";
+        names[13] = "girdle";
+        names[14] = "culet";
+        return names;
+    }
+
+    /**
+     * @dev Validate transiton from currentState to newState. Revert on invalid transition
+     * @param _currentState current diamond state
+     * @param _newState new diamond state
+     */
+    function _validateStateTransitionTo(bytes32 _currentState, bytes32 _newState) internal pure {
+        require(_currentState != _newState, "Already in that state");
+    }
+
+    /**
+     * @dev Change diamond status with logging. Revert on invalid transition
+     * @param _newState new token state
+     * @param _tokenId represent the index of diamond
+     */
+    function _changeStateTo(bytes32 _newState, uint256 _tokenId) internal {
+        Diamond storage _diamond = diamonds[_tokenId];
+        _validateStateTransitionTo(_diamond.state, _newState);
+        _diamond.state = _newState;
+        emit LogStateChanged(_tokenId, _newState);
     }
 }

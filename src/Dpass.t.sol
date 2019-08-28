@@ -27,9 +27,7 @@ contract DpassTester {
 contract DpassTest is DSTest {
     Dpass dpass;
     DpassTester user;
-
-    bytes32[] attributes = new bytes32[](2);
-
+    bytes32[] attributes = new bytes32[](15);
 
     function setUp() public {
         dpass = new Dpass();
@@ -37,21 +35,21 @@ contract DpassTest is DSTest {
 
         attributes[0] = "0.71";
         attributes[1] = "8.06 - 8.17 x 5.10 mm";
-        // attributes[2] = "F";
-        // attributes[3] = "Internally Flawless";
-        // attributes[4] = "Excellent";
-        // attributes[5] = "62.8%";
-        // attributes[6] = "57%";
-        // attributes[7] = "36.5 °";
-        // attributes[8] = "16.0%";
-        // attributes[9] = "41.2°";
-        // attributes[10] = "43.5%";
-        // attributes[11] = "50%";
-        // attributes[12] = "80%";
-        // attributes[13] = "Medium to Slightly Thick, 3.5%";
-        // attributes[14] = "Very small";
+        attributes[2] = "F";
+        attributes[3] = "Internally Flawless";
+        attributes[4] = "Excellent";
+        attributes[5] = "62.8%";
+        attributes[6] = "57%";
+        attributes[7] = "36.5 °";
+        attributes[8] = "16.0%";
+        attributes[9] = "41.2°";
+        attributes[10] = "43.5%";
+        attributes[11] = "50%";
+        attributes[12] = "80%";
+        attributes[13] = "Medium to Slightly Thick, 3.5%";
+        attributes[14] = "Very small";
 
-        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, "sale", attributes);
+        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, "init", attributes);
     }
 
     function testFailBasicSanity() public {
@@ -115,5 +113,21 @@ contract DpassTest is DSTest {
         (issuer, report, price, state, attrs) = dpass.getDiamond(0);
         assertEq32(state, "redeemed");
         assertEq(dpass.ownerOf(0), dpass.owner());
+    }
+
+    function testAttributeValue() public {
+        bytes32 issuer;
+        bytes32 report;
+        uint256 price;
+        bytes32 state;
+        bytes32[] memory attrs;
+
+        (issuer, report, price, state, attrs) = dpass.getDiamond(0);
+        assertEq(attrs[0], "0.71");
+        assertEq(attrs[14], "Very small");
+    }
+
+    function testFailGetNonExistDiamond() public view {
+        dpass.getDiamond(1);
     }
 }
