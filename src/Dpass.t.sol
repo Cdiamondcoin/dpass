@@ -130,4 +130,8 @@ contract DpassTest is DSTest {
     function testFailGetNonExistDiamond() public view {
         dpass.getDiamond(1);
     }
+
+    function testFailMintNonUniqDiamond() public {
+        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, "init", attributes);
+    }
 }

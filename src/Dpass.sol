@@ -43,10 +43,10 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32 report;
         uint price;
         bytes32 state;
-
         bytes32[] attributeNames;
         bytes32[] attributeValues;
     }
+    mapping (bytes32 => mapping (bytes32=> uint256)) diamondDb;
 
     Diamond[] diamonds;
     AttributeNameList public attributeNameListAddress;
@@ -84,9 +84,10 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     )
         public auth
     {
+        _validateUniquness(_issuer, _report);
+
         bytes32[] memory _attributeNames = getAttributeNames();
         bytes32[] memory _attributeValues = new bytes32[](_attributeNames.length);
-
         for (uint i = 0; i < _attributeNames.length; i++) {
             _attributeValues[i] = _attributes[i];
         }
@@ -253,6 +254,17 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      */
     function _validateStateTransitionTo(bytes32 _currentState, bytes32 _newState) internal pure {
         require(_currentState != _newState, "Already in that state");
+    }
+
+    /**
+     * @dev Validate Issuer and report together uniqueness. Revert on invalid existance
+     * @param _issuer issuer like GIA
+     * @param _report issuer unique nr.
+     */
+    function _validateUniquness(bytes32 _issuer, bytes32 _report) internal {
+        require(diamondDb[_issuer][_report] != 1, "Issuer and report not unique.");
+        // TODO: should we move to another function?
+        diamondDb[_issuer][_report] = 1;
     }
 
     /**
