@@ -1,8 +1,8 @@
-pragma solidity ^0.5.4;
+pragma solidity ^0.5.6;
 
 import "ds-test/test.sol";
-
 import "./Dpass.sol";
+
 
 contract DpassTester {
     Dpass public _dpass;
@@ -11,45 +11,39 @@ contract DpassTester {
         _dpass = dpass;
     }
 
-    function doSetPrice(uint256 token_id, uint price) public {
-        _dpass.setPrice(token_id, price);
+    function doSetOwnerPrice(uint tokenId, uint price) public {
+        _dpass.setOwnerPrice(tokenId, price);
     }
 
-    function doSetSaleStatus(uint256 token_id) public {
-        _dpass.setSaleStatus(token_id);
+    function doSetSaleStatus(uint tokenId) public {
+        _dpass.setSaleStatus(tokenId);
     }
 
-    function doRedeem(uint token_id) public {
-        _dpass.redeem(token_id);
+    function doRedeem(uint tokenId) public {
+        _dpass.redeem(tokenId);
     }
 }
 
 contract DpassTest is DSTest {
     Dpass dpass;
     DpassTester user;
-    bytes32[] attributes = new bytes32[](15);
+    bytes32[] attributes = new bytes32[](5);
+    bytes32 attributesHash;
 
     function setUp() public {
         dpass = new Dpass();
         user = new DpassTester(dpass);
 
-        attributes[0] = "0.71";
-        attributes[1] = "8.06 - 8.17 x 5.10 mm";
+        attributes[0] = "Round";
+        attributes[1] = "0.71";
         attributes[2] = "F";
-        attributes[3] = "Internally Flawless";
-        attributes[4] = "Excellent";
-        attributes[5] = "62.8%";
-        attributes[6] = "57%";
-        attributes[7] = "36.5 °";
-        attributes[8] = "16.0%";
-        attributes[9] = "41.2°";
-        attributes[10] = "43.5%";
-        attributes[11] = "50%";
-        attributes[12] = "80%";
-        attributes[13] = "Medium to Slightly Thick, 3.5%";
-        attributes[14] = "Very small";
+        attributes[3] = "IF";
+        attributes[4] = "Flawless";
+        attributesHash = 0x9694b695489e1bc02e6a2358e56ac5c59c26e2ebe2fffffb7859c842f692e763;
 
-        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, "init", attributes);
+        dpass.mintDiamondTo(
+            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash
+        );
     }
 
     function testFailBasicSanity() public {
@@ -71,67 +65,76 @@ contract DpassTest is DSTest {
     function testDiamondIssuerAndReport() public {
         bytes32 issuer;
         bytes32 report;
-        (issuer, report) = dpass.getDiamondIssuerAndReport(0);
+        (issuer, report) = dpass.getDiamondIssuerAndReport(1);
         assertEq32(issuer, "GIA");
         assertEq32(report, "01");
     }
 
     function testFailNonOwnerMintDiamond() public {
         dpass.setOwner(address(0));
-        dpass.mintDiamondTo(address(user), "GIA", "02", 1 ether, "sale", attributes);
+        dpass.mintDiamondTo(address(user), "GIA", "02", 1 ether, 1 ether, "sale", attributes, attributesHash);
     }
 
     function testOwnershipOfNewDiamond() public {
-        assertEq(dpass.ownerOf(0), address(user));
+        assertEq(dpass.ownerOf(1), address(user));
     }
 
     function testPriceChange() public {
-        user.doSetPrice(0, 2 ether);
-        assertEq(dpass.getPrice(0), 2 ether);
+        user.doSetOwnerPrice(1, 2 ether);
+        assertEq(dpass.getPrice(1), 2 ether);
     }
 
     function testSaleStatusChange() public {
-        user.doSetSaleStatus(0);
+        user.doSetSaleStatus(1);
         bytes32 issuer;
         bytes32 report;
-        uint256 price;
+        uint ownerPrice;
+        uint marketplacePrice;
         bytes32 state;
         bytes32[] memory attrs;
+        bytes32 attrsHash;
 
-        (issuer, report, price, state, attrs) = dpass.getDiamond(0);
+        (issuer, report, ownerPrice, marketplacePrice, state, attrs, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "sale");
     }
 
     function testRedeemStatusChange() public {
-        user.doRedeem(0);
+        user.doRedeem(1);
         bytes32 issuer;
         bytes32 report;
-        uint256 price;
+        uint ownerPrice;
+        uint marketplacePrice;
         bytes32 state;
         bytes32[] memory attrs;
+        bytes32 attrsHash;
 
-        (issuer, report, price, state, attrs) = dpass.getDiamond(0);
+        (issuer, report, ownerPrice, marketplacePrice, state, attrs, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "redeemed");
-        assertEq(dpass.ownerOf(0), dpass.owner());
+        assertEq(dpass.ownerOf(1), dpass.owner());
     }
 
     function testAttributeValue() public {
         bytes32 issuer;
         bytes32 report;
-        uint256 price;
+        uint ownerPrice;
+        uint marketplacePrice;
         bytes32 state;
         bytes32[] memory attrs;
+        bytes32 attrsHash;
 
-        (issuer, report, price, state, attrs) = dpass.getDiamond(0);
-        assertEq(attrs[0], "0.71");
-        assertEq(attrs[14], "Very small");
+        (issuer, report, ownerPrice, marketplacePrice, state, attrs, attrsHash) = dpass.getDiamond(1);
+
+        assertEq(attrs[0], "Round");
+        assertEq(attrs[1], "0.71");
+        assertEq(attrs[2], "F");
+        assertEq(attrs[3], "IF");
     }
 
     function testFailGetNonExistDiamond() public view {
-        dpass.getDiamond(1);
+        dpass.getDiamond(1000);
     }
 
     function testFailMintNonUniqDiamond() public {
-        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, "init", attributes);
+        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash);
     }
 }
