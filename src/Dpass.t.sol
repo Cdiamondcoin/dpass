@@ -1,4 +1,4 @@
-pragma solidity ^0.5.6;
+pragma solidity ^0.5.10;
 
 import "ds-test/test.sol";
 import "./Dpass.sol";
@@ -28,6 +28,7 @@ contract DpassTest is DSTest {
     Dpass dpass;
     DpassTester user;
     bytes32[] attributes = new bytes32[](5);
+    bytes8 hasningAlgorithm = "20190101";
     bytes32 attributesHash;
 
     function setUp() public {
@@ -39,10 +40,11 @@ contract DpassTest is DSTest {
         attributes[2] = "F";
         attributes[3] = "IF";
         attributes[4] = "Flawless";
+
         attributesHash = 0x9694b695489e1bc02e6a2358e56ac5c59c26e2ebe2fffffb7859c842f692e763;
 
         dpass.mintDiamondTo(
-            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash
+            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
         );
     }
 
@@ -72,7 +74,9 @@ contract DpassTest is DSTest {
 
     function testFailNonOwnerMintDiamond() public {
         dpass.setOwner(address(0));
-        dpass.mintDiamondTo(address(user), "GIA", "02", 1 ether, 1 ether, "sale", attributes, attributesHash);
+        dpass.mintDiamondTo(
+            address(user), "GIA", "02", 1 ether, 1 ether, "sale", attributes, attributesHash, hasningAlgorithm
+        );
     }
 
     function testOwnershipOfNewDiamond() public {
@@ -135,6 +139,6 @@ contract DpassTest is DSTest {
     }
 
     function testFailMintNonUniqDiamond() public {
-        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash);
+        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm);
     }
 }

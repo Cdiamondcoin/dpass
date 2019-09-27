@@ -1,4 +1,4 @@
-pragma solidity ^0.5.6;
+pragma solidity ^0.5.10;
 
 // /**
 //  * How to use dapp and openzeppelin-solidity https://github.com/dapphub/dapp/issues/70
@@ -14,9 +14,7 @@ import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 * @dev AssetManagement contract interface
 */
 contract TrustedAssetManagement {
-    function getPrice(ERC721Full erc721, uint id721) external view returns(uint);
-    // TODO: Will Robert implement this function?
-    function isAssetManager(address sender) external view returns(uint);
+    function getPrice(address erc721, uint id721) external view returns(uint);
 }
 
 
@@ -48,6 +46,7 @@ contract DpassEvents {
     event LogSetAttributeNameListAddress(address priceFeed);
     event LogSetTrustedAssetManagement(address asm);
     event LogHashingAlgorithmChange(bytes8 name);
+    event LogDiamondAttributesChange(uint indexed tokenId, bytes8 hashAlgorithm);
 }
 
 
@@ -55,7 +54,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     string private _name = "CDC Passport";
     string private _symbol = "CDC PASS";
 
-    TrustedAssetManagement public asm;      // Asset Management contract
+    TrustedAssetManagement public asm;                          // Asset Management contract
 
     struct Diamond {
         bytes32 issuer;
@@ -63,17 +62,17 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         uint ownerPrice;
         uint marketplacePrice;
         bytes32 state;
-        bytes32[] attributeNames;
-        bytes32[] attributeValues;
+        bytes32[] attributeNames;                               // List of Rapaport calc required attributes names
+        bytes32[] attributeValues;                              // List of Rapaport calc required attributes values
+        bytes8 currentHashingAlgorithm;                         // Current hashing algorithm to check in the proof mapping
     }
     Diamond[] diamonds;                                         // List of Dpasses
 
     AttributeNameList public attributeNameListAddress;          // List of Diamond main parameters. Rapaport price depends on it
-    // TODO: Save to Diamond structure?
-    mapping (uint => mapping(bytes32 => bytes32)) public proof; // Prof of attributes integrity [tokenId][hashingAlgorithm] => hash
-    mapping (bytes32 => mapping (bytes32 => uint)) diamondDb;   // List of dpasses by issuer and report number [issuer][number]
-    bytes8 public hashingAlgorithm = "20191001";                // Actual hasning algorithm name in format yyyymmdd
-    mapping(uint256 => uint256) public recreatedDiamonds;       // List of recreated tokens. old tokenId => new tokenId
+
+    mapping (uint => mapping(bytes32 => bytes32)) public proof;  // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
+    mapping (bytes32 => mapping (bytes32 => uint)) diamondIndex; // List of dpasses by issuer and report number [issuer][number]
+    mapping (uint256 => uint256) public recreated;               // List of recreated tokens. old tokenId => new tokenId
 
 
     constructor () public ERC721Full(_name, _symbol) {
@@ -85,7 +84,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             marketplacePrice: uint(-1),
             state: "invalid",
             attributeNames: new bytes32[](1),
-            attributeValues: new bytes32[](1)
+            attributeValues: new bytes32[](1),
+            currentHashingAlgorithm: ""
         });
 
         diamonds.push(_diamond);
@@ -99,12 +99,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
     modifier ifExist(uint _tokenId) {
         require(_exists(_tokenId), "Diamond does not exist");
-        _;
-    }
-
-    // TODO: Validate sender for permissions
-    modifier onlyAssetManager() {
-        require(msg.sender == msg.sender, "Only Asset manager");
         _;
     }
 
@@ -126,6 +120,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @param _marketplacePrice uint diamond price
     * @param _state diamond state, "sale" is the init status
     * @param _attributes diamond Rapaport attributes
+    * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
     * @return Return Diamond tokenId of the diamonds list
     */
     function mintDiamondTo(
@@ -136,18 +131,12 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         uint _marketplacePrice,
         bytes32 _state,
         bytes32[] memory _attributes,
-        bytes32 _attributesHash
+        bytes32 _attributesHash,
+        bytes8 _currentHashingAlgorithm
     )
         public auth
     {
         _validateUniquness(_issuer, _report);
-
-        bytes32[] memory _attributeNames = getAttributeNames();
-        bytes32[] memory _attributeValues = new bytes32[](_attributeNames.length);
-
-        for (uint i = 0; i < _attributeNames.length; i++) {
-            _attributeValues[i] = _attributes[i];
-        }
 
         Diamond memory _diamond = Diamond({
             issuer: _issuer,
@@ -155,14 +144,45 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             ownerPrice: _ownerPrice,
             marketplacePrice: _marketplacePrice,
             state: _state,
-            attributeNames: _attributeNames,
-            attributeValues: _attributeValues
+            attributeNames: getAttributeNames(),
+            attributeValues: _attributes,
+            currentHashingAlgorithm: _currentHashingAlgorithm
         });
         uint _tokenId = diamonds.push(_diamond) - 1;
-        proof[_tokenId][hashingAlgorithm] = _attributesHash;
+        proof[_tokenId][_currentHashingAlgorithm] = _attributesHash;
 
-        super._mint(_to, _tokenId);
+        _mint(_to, _tokenId);
         emit LogDiamondMinted(_to, _tokenId, _issuer, _report, _ownerPrice, _marketplacePrice, _state);
+    }
+
+    /**
+    * @dev Update _tokenId attributes
+    * @param _attributes diamond Rapaport attribute values
+    * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
+    */
+    function updateAttributes(
+        uint _tokenId,
+        bytes32[] memory _attributes,
+        bytes32 _attributesHash,
+        bytes8 _currentHashingAlgorithm
+    ) public auth onlyValid(_tokenId)
+    {
+        Diamond storage _diamond = diamonds[_tokenId];
+
+        _diamond.attributeNames = getAttributeNames();
+        _diamond.attributeValues = _attributes;
+        _diamond.currentHashingAlgorithm = _currentHashingAlgorithm;
+
+        proof[_tokenId][_currentHashingAlgorithm] = _attributesHash;
+
+        emit LogDiamondAttributesChange(_tokenId, _currentHashingAlgorithm);
+    }
+
+    /**
+    * @dev Link old and the same new dpass
+    */
+    function linkOldToNewToken(uint _tokenId, uint _newTokenId) public auth onlyValid(_tokenId) {
+        recreated[_tokenId] = _newTokenId;
     }
 
     /**
@@ -198,7 +218,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         )
     {
         Diamond storage _diamond = diamonds[_tokenId];
-        attributesHash = proof[_tokenId][hashingAlgorithm];
+        attributesHash = proof[_tokenId][_diamond.currentHashingAlgorithm];
 
         return (
             _diamond.issuer,
@@ -266,7 +286,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      * @param _newPrice uint new price of diamond
      */
-    function setMarketplacePrice(uint _tokenId, uint _newPrice) public onlyAssetManager ifExist(_tokenId) {
+    function setMarketplacePrice(uint _tokenId, uint _newPrice) public auth ifExist(_tokenId) {
         Diamond storage _diamond = diamonds[_tokenId];
 
         uint oldPrice = _diamond.marketplacePrice;
@@ -277,7 +297,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         }
     }
 
-
     /**
      * @dev Set Diamond sale status
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
@@ -286,14 +305,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function setSaleStatus(uint _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
         _changeStateTo("sale", _tokenId);
         emit LogSale(_tokenId);
-    }
-
-    /**
-     * @dev Set new hashing Algorithm for dpass attributes hash
-     */
-    function setHashingAlgorithm(bytes8 _newHashingAlgorithm) public auth {
-        hashingAlgorithm = _newHashingAlgorithm;
-        emit LogHashingAlgorithmChange(_newHashingAlgorithm);
     }
 
     /**
@@ -314,7 +325,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getMarketplacePrice(uint _tokenId) public view ifExist(_tokenId) returns(uint) {
         Diamond storage _diamond = diamonds[_tokenId];
         if (_diamond.marketplacePrice == 0) {
-            return asm.getPrice(ERC721Full(this), _tokenId);
+            return asm.getPrice(address(this), _tokenId);
         } else {
             return _diamond.marketplacePrice;
         }
@@ -341,6 +352,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getPrice(uint _tokenId) public view ifExist(_tokenId) returns(uint) {
         return getOwnerPrice(_tokenId);
     }
+
 
     // Private functions
 
@@ -373,9 +385,9 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _report issuer unique nr.
      */
     function _validateUniquness(bytes32 _issuer, bytes32 _report) internal {
-        require(diamondDb[_issuer][_report] != 1, "Issuer and report not unique.");
+        require(diamondIndex[_issuer][_report] != 1, "Issuer and report not unique.");
         // TODO: should we move to another function?
-        diamondDb[_issuer][_report] = 1;
+        diamondIndex[_issuer][_report] = 1;
     }
 
     /**
