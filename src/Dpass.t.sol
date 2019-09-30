@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.5.6;
 
 import "ds-test/test.sol";
 import "./Dpass.sol";
@@ -57,7 +57,7 @@ contract DpassTest is DSTest {
     }
 
     function testSymbolFunc() public {
-        assertEq0(bytes(dpass.symbol()), bytes("CDC PASS"));
+        assertEq0(bytes(dpass.symbol()), bytes("Dpass"));
     }
 
     function testDiamondBalance() public {
@@ -95,11 +95,13 @@ contract DpassTest is DSTest {
         uint ownerPrice;
         uint marketplacePrice;
         bytes32 state;
+        bytes32[] memory names;
         bytes32[] memory attrs;
         bytes32 attrsHash;
 
-        (issuer, report, ownerPrice, marketplacePrice, state, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "sale");
+        assertEq32(attrsHash, attributesHash);
     }
 
     function testRedeemStatusChange() public {
@@ -109,10 +111,11 @@ contract DpassTest is DSTest {
         uint ownerPrice;
         uint marketplacePrice;
         bytes32 state;
+        bytes32[] memory names;
         bytes32[] memory attrs;
         bytes32 attrsHash;
 
-        (issuer, report, ownerPrice, marketplacePrice, state, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "redeemed");
         assertEq(dpass.ownerOf(1), dpass.owner());
     }
@@ -123,10 +126,11 @@ contract DpassTest is DSTest {
         uint ownerPrice;
         uint marketplacePrice;
         bytes32 state;
+        bytes32[] memory names;
         bytes32[] memory attrs;
         bytes32 attrsHash;
 
-        (issuer, report, ownerPrice, marketplacePrice, state, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
 
         assertEq(attrs[0], "Round");
         assertEq(attrs[1], "0.71");
@@ -139,6 +143,22 @@ contract DpassTest is DSTest {
     }
 
     function testFailMintNonUniqDiamond() public {
-        dpass.mintDiamondTo(address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm);
+        dpass.mintDiamondTo(
+            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
+        );
+    }
+
+    function testLinkOldToNewToken() public {
+        dpass.mintDiamondTo(
+            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
+        );
+        dpass.linkOldToNewToken(1, 2);
+    }
+
+    function testFailNotExistLinkOldToNewToken() public {
+        dpass.mintDiamondTo(
+            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
+        );
+        dpass.linkOldToNewToken(1, 100);
     }
 }
