@@ -1,4 +1,4 @@
-pragma solidity ^0.5.6;
+pragma solidity ^0.5.10;
 
 // /**
 //  * How to use dapp and openzeppelin-solidity https://github.com/dapphub/dapp/issues/70
@@ -241,6 +241,36 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         } else {
             return attributeNameListAddress.get();
         }
+    }
+
+    /**
+     * @dev Return default diamond attribute names as string
+     * @return commaseperated string
+     */
+    function getAttributeNamesAsString() public view returns(string memory) {
+        // string[] memory names;
+        bytes32[] memory data = getAttributeNames();
+        bytes memory bytesString = new bytes(data.length * 32 + data.length);
+        uint attribLength;
+
+        for (uint i = 0; i < data.length; i++) {
+            for (uint j = 0; j < 32; j++) {
+                byte char = byte(bytes32(uint(data[i]) * 2 ** (8 * j)));
+                if (char != 0) {
+                    bytesString[attribLength] = char;
+                    attribLength += 1;
+                }
+            }
+            // add semicolumn
+            bytesString[attribLength] = byte(";");
+            attribLength += 1;
+        }
+
+        bytes memory bytesStringTrimmed = new bytes(attribLength);
+        for (uint i = 0; i < attribLength; i++) {
+            bytesStringTrimmed[i] = bytesString[i];
+        }
+        return string(bytesStringTrimmed);
     }
 
     /**

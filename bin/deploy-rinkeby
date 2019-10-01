@@ -26,10 +26,10 @@ export ETH_FROM=0x9556E25F9b4D343ee38348b6Db8691d10fD08A61
 
 test -z $NETWORK && exit 1
 
-dapp build
+dapp build --extract
 
 # Flatt contract to verify
-hevm flatten --source-file src/Dpass.sol --json-file out/Dpass.sol.json > out/Dpass-flatt.sol
+hevm flatten --source-file src/Dpass.sol --json-file out/dapp.sol.json > out/Dpass-flatt.sol
 
 DPASS=$(dapp create Dpass)
 

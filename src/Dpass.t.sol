@@ -1,4 +1,4 @@
-pragma solidity ^0.5.6;
+pragma solidity ^0.5.10;
 
 import "ds-test/test.sol";
 import "./Dpass.sol";
@@ -135,11 +135,19 @@ contract DpassTest is DSTest {
         bytes32 attrsHash;
 
         (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
+        bytes32[] memory defaultNames = dpass.getAttributeNames();
 
+        // Values
         assertEq(attrs[0], "Round");
         assertEq(attrs[1], "0.71");
         assertEq(attrs[2], "F");
         assertEq(attrs[3], "IF");
+
+        // Names
+        assertEq(names[0], defaultNames[0]);
+        assertEq(names[1], defaultNames[1]);
+        assertEq(names[2], defaultNames[2]);
+        assertEq(names[3], defaultNames[3]);
     }
 
     function testFailGetNonExistDiamond() public view {
@@ -184,5 +192,11 @@ contract DpassTest is DSTest {
 
     function testFailNonOwnerChangeState() public {
         user.doChangeStateTo("new_state", 1);
+    }
+
+    function testgetAttributeNamesAsString() public {
+        string memory names;
+        names = dpass.getAttributeNamesAsString();
+        assertEq0(bytes(names), bytes("shape;weight;color;clarity;cut;"));
     }
 }
