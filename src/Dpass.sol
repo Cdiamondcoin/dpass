@@ -363,6 +363,14 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         return getOwnerPrice(_tokenId);
     }
 
+    /**
+     * @dev Change diamond status.
+     * @param _newState new token state
+     * @param _tokenId represent the index of diamond
+     */
+    function changeStateTo(bytes32 _newState, uint _tokenId) public auth ifExist(_tokenId) {
+        _changeStateTo(_newState, _tokenId);
+    }
 
     // Private functions
 

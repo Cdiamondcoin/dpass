@@ -22,6 +22,10 @@ contract DpassTester {
     function doRedeem(uint tokenId) public {
         _dpass.redeem(tokenId);
     }
+
+    function doChangeStateTo(bytes32 state, uint tokenId) public {
+        _dpass.changeStateTo(state, tokenId);
+    }
 }
 
 contract DpassTest is DSTest {
@@ -160,5 +164,25 @@ contract DpassTest is DSTest {
             address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
         );
         dpass.linkOldToNewToken(1, 100);
+    }
+
+    function testChangeState() public {
+        dpass.changeStateTo("new_state", 1);
+
+        bytes32 issuer;
+        bytes32 report;
+        uint ownerPrice;
+        uint marketplacePrice;
+        bytes32 state;
+        bytes32[] memory names;
+        bytes32[] memory attrs;
+        bytes32 attrsHash;
+
+        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
+        assertEq(state, "new_state");
+    }
+
+    function testFailNonOwnerChangeState() public {
+        user.doChangeStateTo("new_state", 1);
     }
 }
