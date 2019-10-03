@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.5.11;
 
 // /**
 //  * How to use dapp and openzeppelin-solidity https://github.com/dapphub/dapp/issues/70
