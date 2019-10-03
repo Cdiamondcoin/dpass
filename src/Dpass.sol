@@ -248,29 +248,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @return commaseperated string
      */
     function getAttributeNamesAsString() public view returns(string memory) {
-        // string[] memory names;
         bytes32[] memory data = getAttributeNames();
-        bytes memory bytesString = new bytes(data.length * 32 + data.length);
-        uint attribLength;
-
-        for (uint i = 0; i < data.length; i++) {
-            for (uint j = 0; j < 32; j++) {
-                byte char = byte(bytes32(uint(data[i]) * 2 ** (8 * j)));
-                if (char != 0) {
-                    bytesString[attribLength] = char;
-                    attribLength += 1;
-                }
-            }
-            // add semicolumn
-            bytesString[attribLength] = byte(";");
-            attribLength += 1;
-        }
-
-        bytes memory bytesStringTrimmed = new bytes(attribLength);
-        for (uint i = 0; i < attribLength; i++) {
-            bytesStringTrimmed[i] = bytesString[i];
-        }
-        return string(bytesStringTrimmed);
+        return _bytes32ArrayToSemicolonString(data);
     }
 
     /**
@@ -453,4 +432,33 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         _diamond.state = _newState;
         emit LogStateChanged(_tokenId, _newState);
     }
+
+    /**
+     * @dev Convert bytes32 array to ; seperated string
+     * @return semicolon seperated string
+     */
+    function _bytes32ArrayToSemicolonString(bytes32[] memory data) internal pure returns(string memory) {
+        bytes memory bytesString = new bytes(data.length * 32 + data.length);
+        uint attribLength;
+
+        for (uint i = 0; i < data.length; i++) {
+            for (uint j = 0; j < 32; j++) {
+                byte char = byte(bytes32(uint(data[i]) * 2 ** (8 * j)));
+                if (char != 0) {
+                    bytesString[attribLength] = char;
+                    attribLength += 1;
+                }
+            }
+            // add semicolumn
+            bytesString[attribLength] = byte(";");
+            attribLength += 1;
+        }
+
+        bytes memory bytesStringTrimmed = new bytes(attribLength);
+        for (uint i = 0; i < attribLength; i++) {
+            bytesStringTrimmed[i] = bytesString[i];
+        }
+        return string(bytesStringTrimmed);
+    }
+
 }
