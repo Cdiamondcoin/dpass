@@ -31,7 +31,7 @@ contract DpassTester {
 contract DpassTest is DSTest {
     Dpass dpass;
     DpassTester user;
-    bytes32[] attributes = new bytes32[](5);
+    bytes32[] attributes = new bytes32[](4);
     bytes8 hasningAlgorithm = "20190101";
     bytes32 attributesHash;
 
@@ -43,7 +43,6 @@ contract DpassTest is DSTest {
         attributes[1] = "0.71";
         attributes[2] = "F";
         attributes[3] = "IF";
-        attributes[4] = "Flawless";
 
         attributesHash = 0x9694b695489e1bc02e6a2358e56ac5c59c26e2ebe2fffffb7859c842f692e763;
 
@@ -197,6 +196,6 @@ contract DpassTest is DSTest {
     function testgetAttributeNamesAsString() public {
         string memory names;
         names = dpass.getAttributeNamesAsString();
-        assertEq0(bytes(names), bytes("shape;weight;color;clarity;cut;"));
+        assertEq0(bytes(names), bytes("shape;weight;color;clarity;"));
     }
 }

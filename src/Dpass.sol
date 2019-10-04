@@ -388,12 +388,11 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @return array of attrubutes names
      */
     function _getDefaultAttributeNameList() internal pure returns (bytes32[] memory) {
-        bytes32[] memory names = new bytes32[](5);
+        bytes32[] memory names = new bytes32[](4);
         names[0] = "shape";
         names[1] = "weight";
         names[2] = "color";
         names[3] = "clarity";
-        names[4] = "cut";
         return names;
     }
 
