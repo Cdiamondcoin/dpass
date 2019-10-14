@@ -26,6 +26,10 @@ contract DpassTester {
     function doChangeStateTo(bytes32 state, uint tokenId) public {
         _dpass.changeStateTo(state, tokenId);
     }
+
+    function doSetCustodianAddress(address _newCustodian) public {
+        _dpass.setCustodianAddress(_newCustodian);
+    }
 }
 
 contract DpassTest is DSTest {
@@ -197,5 +201,14 @@ contract DpassTest is DSTest {
         string memory names;
         names = dpass.getAttributeNamesAsString();
         assertEq0(bytes(names), bytes("shape;weight;color;clarity;"));
+    }
+
+    function testSetCustodianAddress() public {
+        dpass.setCustodianAddress(address(0xee));
+        assertEq(dpass.custodian(), address(0xee));
+    }
+
+    function testFailNonAuthSetCustodianAddress() public {
+        user.doSetCustodianAddress(address(0xee));
     }
 }

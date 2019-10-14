@@ -47,6 +47,7 @@ contract DpassEvents {
     event LogSetTrustedAssetManagement(address asm);
     event LogHashingAlgorithmChange(bytes8 name);
     event LogDiamondAttributesHashChange(uint indexed tokenId, bytes8 hashAlgorithm);
+    event LogCustodianChanged(address custodian);
 }
 
 
@@ -69,6 +70,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     Diamond[] diamonds;                                         // List of Dpasses
 
     AttributeNameList public attributeNameListAddress;          // List of Diamond main parameters. Rapaport price depends on it
+    address public custodian;                                   // Address of custodian that holds an token for Exchange
 
     mapping (uint => mapping(bytes32 => bytes32)) public proof;  // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
     mapping (bytes32 => mapping (bytes32 => uint)) diamondIndex; // List of dpasses by issuer and report number [issuer][number]
@@ -274,6 +276,12 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         require(_newAddress != address(0), "Wrong address");
         attributeNameListAddress = AttributeNameList(_newAddress);
         emit LogSetAttributeNameListAddress(_newAddress);
+    }
+
+    function setCustodianAddress(address _newCustodian) public auth {
+        require(_newCustodian != address(0), "Wrong address");
+        custodian = _newCustodian;
+        emit LogCustodianChanged(custodian);
     }
 
     /**
