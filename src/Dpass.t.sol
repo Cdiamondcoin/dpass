@@ -27,8 +27,8 @@ contract DpassTester {
         _dpass.changeStateTo(state, tokenId);
     }
 
-    function doSetCustodianAddress(address _newCustodian) public {
-        _dpass.setCustodianAddress(_newCustodian);
+    function doSetCustodian(uint tokenId, address newCustodian) public {
+        _dpass.setCustodian(tokenId, newCustodian);
     }
 }
 
@@ -38,6 +38,7 @@ contract DpassTest is DSTest {
     bytes32[] attributes = new bytes32[](4);
     bytes8 hasningAlgorithm = "20190101";
     bytes32 attributesHash;
+    address custodian;
 
     function setUp() public {
         dpass = new Dpass();
@@ -49,9 +50,10 @@ contract DpassTest is DSTest {
         attributes[3] = "IF";
 
         attributesHash = 0x9694b695489e1bc02e6a2358e56ac5c59c26e2ebe2fffffb7859c842f692e763;
+        custodian = address(0xf);
 
         dpass.mintDiamondTo(
-            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
+            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
         );
     }
 
@@ -82,7 +84,7 @@ contract DpassTest is DSTest {
     function testFailNonOwnerMintDiamond() public {
         dpass.setOwner(address(0));
         dpass.mintDiamondTo(
-            address(user), "GIA", "02", 1 ether, 1 ether, "sale", attributes, attributesHash, hasningAlgorithm
+            address(user), "GIA", "02", 1 ether, 1 ether, "sale", attributes, attributesHash, hasningAlgorithm, custodian
         );
     }
 
@@ -159,20 +161,20 @@ contract DpassTest is DSTest {
 
     function testFailMintNonUniqDiamond() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
+            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
         );
     }
 
     function testLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
+            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
         );
         dpass.linkOldToNewToken(1, 2);
     }
 
     function testFailNotExistLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm
+            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
         );
         dpass.linkOldToNewToken(1, 100);
     }
@@ -203,12 +205,12 @@ contract DpassTest is DSTest {
         assertEq0(bytes(names), bytes("shape;weight;color;clarity;"));
     }
 
-    function testSetCustodianAddress() public {
-        dpass.setCustodianAddress(address(0xee));
-        assertEq(dpass.custodian(), address(0xee));
+    function testSetCustodian() public {
+        dpass.setCustodian(1, address(0xee));
+        assertEq(dpass.getCustodian(1), address(0xee));
     }
 
-    function testFailNonAuthSetCustodianAddress() public {
-        user.doSetCustodianAddress(address(0xee));
+    function testFailNonAuthSetCustodian() public {
+        user.doSetCustodian(1, address(0xee));
     }
 }

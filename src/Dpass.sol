@@ -47,7 +47,7 @@ contract DpassEvents {
     event LogSetTrustedAssetManagement(address asm);
     event LogHashingAlgorithmChange(bytes8 name);
     event LogDiamondAttributesHashChange(uint indexed tokenId, bytes8 hashAlgorithm);
-    event LogCustodianChanged(address custodian);
+    event LogCustodianChanged(uint tokenId, address custodian);
 }
 
 
@@ -70,8 +70,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     Diamond[] diamonds;                                         // List of Dpasses
 
     AttributeNameList public attributeNameListAddress;          // List of Diamond main parameters. Rapaport price depends on it
-    address public custodian;                                   // Address of custodian that holds an token for Exchange
 
+    mapping(uint => address) public custodian;                   // custodian that holds a Dpass token
     mapping (uint => mapping(bytes32 => bytes32)) public proof;  // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
     mapping (bytes32 => mapping (bytes32 => uint)) diamondIndex; // List of dpasses by issuer and report number [issuer][number]
     mapping (uint256 => uint256) public recreated;               // List of recreated tokens. old tokenId => new tokenId
@@ -123,6 +123,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @param _state diamond state, "sale" is the init status
     * @param _attributes diamond Rapaport attributes
     * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
+    * @param _custodian the custodian of minted dpass
     * @return Return Diamond tokenId of the diamonds list
     */
     function mintDiamondTo(
@@ -134,7 +135,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32 _state,
         bytes32[] memory _attributes,
         bytes32 _attributesHash,
-        bytes8 _currentHashingAlgorithm
+        bytes8 _currentHashingAlgorithm,
+        address _custodian
     )
         public auth
         returns(uint)
@@ -153,6 +155,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         });
         uint _tokenId = diamonds.push(_diamond) - 1;
         proof[_tokenId][_currentHashingAlgorithm] = _attributesHash;
+        custodian[_tokenId] = _custodian;
 
         _mint(_to, _tokenId);
         emit LogDiamondMinted(_to, _tokenId, _issuer, _report, _ownerPrice, _marketplacePrice, _state);
@@ -278,10 +281,20 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         emit LogSetAttributeNameListAddress(_newAddress);
     }
 
-    function setCustodianAddress(address _newCustodian) public auth {
+    /**
+     * @dev Set new custodian for dpass
+     */
+    function setCustodian(uint _tokenId, address _newCustodian) public auth {
         require(_newCustodian != address(0), "Wrong address");
-        custodian = _newCustodian;
-        emit LogCustodianChanged(custodian);
+        custodian[_tokenId] = _newCustodian;
+        emit LogCustodianChanged(_tokenId, _newCustodian);
+    }
+
+    /**
+    * @dev Get the custodian of Dpass.
+    */
+    function getCustodian(uint _tokenId) public view returns(address) {
+        return custodian[_tokenId];
     }
 
     /**
