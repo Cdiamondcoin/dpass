@@ -135,6 +135,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes8 _currentHashingAlgorithm
     )
         public auth
+        returns(uint)
     {
         _addToDiamondIndex(_issuer, _report);
 
@@ -153,6 +154,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
         _mint(_to, _tokenId);
         emit LogDiamondMinted(_to, _tokenId, _issuer, _report, _ownerPrice, _marketplacePrice, _state);
+        return _tokenId;
     }
 
     /**
