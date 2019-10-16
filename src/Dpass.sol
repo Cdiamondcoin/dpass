@@ -13,7 +13,7 @@ import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 /**
 * @dev AssetManagement contract interface
 */
-contract TrustedAssetManagement {
+contract TrustedAssetManagementInterface {
     function getPrice(address erc721, uint id721) external view returns(uint);
 }
 
@@ -44,7 +44,7 @@ contract DpassEvents {
     event LogSale(uint indexed tokenId);
     event LogRedeem(uint indexed tokenId);
     event LogSetAttributeNameListAddress(address priceFeed);
-    event LogSetTrustedAssetManagement(address asm);
+    event LogSetTrustedAssetManagementInterface(address asm);
     event LogHashingAlgorithmChange(bytes8 name);
     event LogDiamondAttributesHashChange(uint indexed tokenId, bytes8 hashAlgorithm);
     event LogCustodianChanged(uint tokenId, address custodian);
@@ -55,7 +55,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     string private _name = "Diamond Passport";
     string private _symbol = "Dpass";
 
-    TrustedAssetManagement public asm;                          // Asset Management contract
+    TrustedAssetManagementInterface public asm;                          // Asset Management contract
 
     struct Diamond {
         bytes32 issuer;
@@ -376,7 +376,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getMarketplacePrice(uint _tokenId) public view ifExist(_tokenId) returns(uint) {
         Diamond storage _diamond = diamonds[_tokenId];
         if (_diamond.marketplacePrice == 0) {
-            require(address(asm) != address(0), "TrustedAssetManagement contract address not defined");
+            require(address(asm) != address(0), "TrustedAssetManagementInterface contract address not defined");
             return asm.getPrice(address(this), _tokenId);
         } else {
             return _diamond.marketplacePrice;
