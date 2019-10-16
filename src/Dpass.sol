@@ -75,7 +75,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     mapping (uint => mapping(bytes32 => bytes32)) public proof;  // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
     mapping (bytes32 => mapping (bytes32 => uint)) diamondIndex; // List of dpasses by issuer and report number [issuer][number]
     mapping (uint256 => uint256) public recreated;               // List of recreated tokens. old tokenId => new tokenId
-
+    mapping(bytes32 => mapping(bytes32 => bool)) public canTransit; // List of state transition rules in format from => to = true/false
 
     constructor () public ERC721Full(_name, _symbol) {
         // Create dummy diamond to start real diamond minting from 1
@@ -92,6 +92,13 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
         diamonds.push(_diamond);
         _mint(address(this), 0);
+
+        // Transition rules
+        canTransit["valid"]["invalid"] = true;
+        canTransit["valid"]["sale"] = true;
+        canTransit["valid"]["redeemed"] = true;
+        canTransit["sale"]["valid"] = true;
+        canTransit["sale"]["invalid"] = true;
     }
 
     modifier onlyOwnerOf(uint _tokenId) {
@@ -260,17 +267,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     /**
-     * @dev Gets the Diamond issuer and it unique nr at a given _tokenId of all the diamonds in this contract
-     * Reverts if the _tokenId is greater or equal to the total number of diamonds
-     * @param _tokenId uint representing the index to be accessed of the diamonds list
-     * @return Issuer and unique Nr. a specific diamond
-     */
-    function getDiamondIssuerAndReport(uint _tokenId) public view ifExist(_tokenId) returns(bytes32, bytes32) {
-        Diamond storage _diamond = diamonds[_tokenId];
-        return (_diamond.issuer, _diamond.report);
-    }
-
-    /**
      * @dev Set new attributeNameListAddress contract address
      * Reverts if invalid address
      * @param _newAddress new address of AttributeNameList contract
@@ -327,6 +323,20 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         if (oldPrice != _newPrice) {
             emit LogMarketplacePriceChanged(_tokenId, _newPrice);
         }
+    }
+
+    /**
+     * @dev Enable transition _from -> _to state
+    */
+    function enableTransition(bytes32 _from, bytes32 _to) public auth {
+        canTransit[_from][_to] = true;
+    }
+
+    /**
+     * @dev Disable transition _from -> _to state
+    */
+    function disableTransition(bytes32 _from, bytes32 _to) public auth {
+        canTransit[_from][_to] = false;
     }
 
     /**
@@ -424,8 +434,9 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _currentState current diamond state
      * @param _newState new diamond state
      */
-    function _validateStateTransitionTo(bytes32 _currentState, bytes32 _newState) internal pure {
+    function _validateStateTransitionTo(bytes32 _currentState, bytes32 _newState) internal view {
         require(_currentState != _newState, "Already in that state");
+        require(canTransit[_currentState][_newState], "Transition now allowed");
     }
 
     /**

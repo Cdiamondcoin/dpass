@@ -53,7 +53,7 @@ contract DpassTest is DSTest {
         custodian = address(0xf);
 
         dpass.mintDiamondTo(
-            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), "GIA", "01", 1 ether, 1 ether, "valid", attributes, attributesHash, hasningAlgorithm, custodian
         );
     }
 
@@ -71,14 +71,6 @@ contract DpassTest is DSTest {
 
     function testDiamondBalance() public {
         assertEq(dpass.balanceOf(address(user)), 1);
-    }
-
-    function testDiamondIssuerAndReport() public {
-        bytes32 issuer;
-        bytes32 report;
-        (issuer, report) = dpass.getDiamondIssuerAndReport(1);
-        assertEq32(issuer, "GIA");
-        assertEq32(report, "01");
     }
 
     function testFailNonOwnerMintDiamond() public {
@@ -161,26 +153,26 @@ contract DpassTest is DSTest {
 
     function testFailMintNonUniqDiamond() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), "GIA", "01", 1 ether, 1 ether, "valid", attributes, attributesHash, hasningAlgorithm, custodian
         );
     }
 
     function testLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), "GIA", "02", 1 ether, 1 ether, "valid", attributes, attributesHash, hasningAlgorithm, custodian
         );
         dpass.linkOldToNewToken(1, 2);
     }
 
     function testFailNotExistLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), "GIA", "02", 1 ether, 1 ether, "valid", attributes, attributesHash, hasningAlgorithm, custodian
         );
         dpass.linkOldToNewToken(1, 100);
     }
 
     function testChangeState() public {
-        dpass.changeStateTo("new_state", 1);
+        dpass.changeStateTo("sale", 1);
 
         bytes32 issuer;
         bytes32 report;
@@ -192,11 +184,39 @@ contract DpassTest is DSTest {
         bytes32 attrsHash;
 
         (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
-        assertEq(state, "new_state");
+        assertEq(state, "sale");
+    }
+
+    function testFailInvalidChangeState() public {
+        dpass.changeStateTo("invalid", 1);
+        dpass.changeStateTo("valid", 1);
     }
 
     function testFailNonOwnerChangeState() public {
-        user.doChangeStateTo("new_state", 1);
+        user.doChangeStateTo("sale", 1);
+    }
+
+    function testNewTransition() public {
+        bytes32 newState = "newState";
+        dpass.enableTransition("valid", newState);
+        dpass.changeStateTo(newState, 1);
+
+        bytes32 issuer;
+        bytes32 report;
+        uint ownerPrice;
+        uint marketplacePrice;
+        bytes32 state;
+        bytes32[] memory names;
+        bytes32[] memory attrs;
+        bytes32 attrsHash;
+
+        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
+        assertEq(state, newState);
+    }
+
+    function testFailDisabledTransition() public {
+        dpass.disableTransition("valid", "sale");
+        dpass.changeStateTo("sale", 1);
     }
 
     function testgetAttributeNamesAsString() public {
