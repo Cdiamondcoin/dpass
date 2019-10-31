@@ -48,6 +48,7 @@ contract DpassEvents {
     event LogHashingAlgorithmChange(bytes8 name);
     event LogDiamondAttributesHashChange(uint indexed tokenId, bytes8 hashAlgorithm);
     event LogCustodianChanged(uint tokenId, address custodian);
+    event CustodianRedFlag(address custodian, bool redFlag);
 }
 
 
@@ -75,6 +76,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     mapping (uint => mapping(bytes32 => bytes32)) public proof;  // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
     mapping (bytes32 => mapping (bytes32 => uint)) diamondIndex; // List of dpasses by issuer and report number [issuer][number]
     mapping (uint256 => uint256) public recreated;               // List of recreated tokens. old tokenId => new tokenId
+    mapping (address => bool) public custodianInRed;             // List of recreated tokens. old tokenId => new tokenId
 
 
     constructor () public ERC721Full(_name, _symbol) {
@@ -128,6 +130,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     */
     function mintDiamondTo(
         address _to,
+        address _custodian
         bytes32 _issuer,
         bytes32 _report,
         uint _ownerPrice,
@@ -136,7 +139,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32[] memory _attributes,
         bytes32 _attributesHash,
         bytes8 _currentHashingAlgorithm,
-        address _custodian
     )
         public auth
         returns(uint)
@@ -199,9 +201,60 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint256 ID of the token to be transferred
      */
     function transferFrom(address _from, address _to, uint256 _tokenId) public onlyValid(_tokenId) {
+        _checkTransfer(_tokenId);
         super.transferFrom(_from, _to, _tokenId);
     }
 
+    /*
+    * @dev set red flag on custodian. This means that a critical security breach has happened at custodian.
+    * This means that all the transfers are temporarily prohibited.
+    */
+    function setRedFlag(address _custodian, bool _redFlag) public auth {
+        custodianInRed[_custodian] = _redFlag;
+        emit CustodianRedFlag(_custodian, _redFlag);
+    }
+
+    /*
+    * @dev Check if transferPossible
+    */
+    function _checkTransfer(uint256 _tokenId) internal {
+        (,,,,,,bytes32 state,,,) = getDiamond(_tokenId);
+
+        require(!custodianInRed[getCustodian(_tokenId)], "Custodian red flag");
+        require(state != "removed", "Token has been removed");
+        require(state != "invalid", "Token deleted");
+    }
+
+    /**
+     * @dev Safely transfers the ownership of a given token ID to another address
+     * If the target address is a contract, it must implement `onERC721Received`,
+     * which is called upon a safe transfer, and return the magic value
+     * `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`; otherwise,
+     * the transfer is reverted.
+     * Requires the msg.sender to be the owner, approved, or operator
+     * @param _from current owner of the token
+     * @param _to address to receive the ownership of the given token ID
+     * @param _tokenId uint256 ID of the token to be transferred
+     */
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId) public {
+        _checkTransfer(_tokenId);
+        super.safeTransferFrom(_from, _to, _tokenId);
+    }
+
+    /*
+    * @dev Returns the custodian of diamond
+    */
+    function getCustodian(uint _tokenId) public view ifExist(_tokenId) returns (address) {
+        return diamonds[_tokenId].custodian;
+    }
+
+    /*
+    * @dev Returns the current state of diamond
+    */
+    function getState(uint _tokenId) public view ifExist(_tokenId) returns (address) {
+        return diamonds[_tokenId].state;
+    }
+                                                         
     /**
      * @dev Gets the Diamond at a given _tokenId of all the diamonds in this contract
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
@@ -213,12 +266,14 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         view
         ifExist(_tokenId)
         returns (
+            address owner,
+            address custodian,
             bytes32 issuer,
             bytes32 report,
             uint ownerPrice,
             uint marketplacePrice,
             bytes32 state,
-            bytes32[] memory attributeNames,
+            bytes32[] memory attributeNames, // TODO: remove attributeNames as they just waste place
             bytes32[] memory attributeValues,
             bytes32 attributesHash
         )
@@ -227,6 +282,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         attributesHash = proof[_tokenId][_diamond.currentHashingAlgorithm];
 
         return (
+            ownerOf(_tokenId),
+            _diamond.custodian,
             _diamond.issuer,
             _diamond.report,
             getOwnerPrice(_tokenId),
