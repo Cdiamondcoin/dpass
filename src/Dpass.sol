@@ -130,7 +130,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     */
     function mintDiamondTo(
         address _to,
-        address _custodian
+        address _custodian,
         bytes32 _issuer,
         bytes32 _report,
         uint _ownerPrice,
@@ -138,7 +138,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32 _state,
         bytes32[] memory _attributes,
         bytes32 _attributesHash,
-        bytes8 _currentHashingAlgorithm,
+        bytes8 _currentHashingAlgorithm
     )
         public auth
         returns(uint)
