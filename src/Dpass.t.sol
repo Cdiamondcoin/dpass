@@ -30,6 +30,14 @@ contract DpassTester {
     function doSetCustodian(uint tokenId, address newCustodian) public {
         _dpass.setCustodian(tokenId, newCustodian);
     }
+
+    function doTransferFrom(address from, address to, uint256 tokenId) public {
+        _dpass.transferFrom(from, to, tokenId);
+    }
+
+    function doSafeTransferFrom(address from, address to, uint256 tokenId) public {
+        _dpass.safeTransferFrom(from, to, tokenId);
+    }
 }
 
 contract DpassTest is DSTest {
@@ -212,5 +220,27 @@ contract DpassTest is DSTest {
 
     function testFailNonAuthSetCustodian() public {
         user.doSetCustodian(1, address(0xee));
+    }
+
+    function testTransfer() public {
+        dpass.setCustodian(1, address(0xee));
+        user.doTransferFrom(address(user), address(0xee), 1);
+    }
+
+    function testSafeTransfer() public {
+        dpass.setCustodian(1, address(0xee));
+        user.doSafeTransferFrom(address(user), address(0xee), 1);
+    }
+
+    function testFailRedFlaggedCustodianTransfer() public {
+        dpass.setCustodian(1, address(0xee));
+        dpass.setRedFlag(address(0xee),true);
+        user.doTransferFrom(address(user), address(0xee), 1);
+    }
+
+    function testFailRedFlaggedCustodianSafeTransfer() public {
+        dpass.setCustodian(1, address(0xee));
+        dpass.setRedFlag(address(0xee),true);
+        user.doSafeTransferFrom(address(user), address(0xee), 1);
     }
 }
