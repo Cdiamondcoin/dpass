@@ -217,7 +217,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     /*
     * @dev Check if transferPossible
     */
-    function _checkTransfer(uint256 _tokenId) internal {
+    function _checkTransfer(uint256 _tokenId) internal view {
         (,,,,bytes32 state,,,) = getDiamond(_tokenId);
 
         require(!custodianInRed[getCustodian(_tokenId)], "Custodian red flag");
