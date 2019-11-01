@@ -218,7 +218,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @dev Check if transferPossible
     */
     function _checkTransfer(uint256 _tokenId) internal {
-        (,,,,,,bytes32 state,,,) = getDiamond(_tokenId);
+        (,,,,bytes32 state,,,) = getDiamond(_tokenId);
 
         require(!custodianInRed[getCustodian(_tokenId)], "Custodian red flag");
         require(state != "removed", "Token has been removed");
@@ -242,16 +242,9 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     /*
-    * @dev Returns the custodian of diamond
-    */
-    function getCustodian(uint _tokenId) public view ifExist(_tokenId) returns (address) {
-        return diamonds[_tokenId].custodian;
-    }
-
-    /*
     * @dev Returns the current state of diamond
     */
-    function getState(uint _tokenId) public view ifExist(_tokenId) returns (address) {
+    function getState(uint _tokenId) public view ifExist(_tokenId) returns (bytes32) {
         return diamonds[_tokenId].state;
     }
                                                          
@@ -266,8 +259,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         view
         ifExist(_tokenId)
         returns (
-            address owner,
-            address custodian,
             bytes32 issuer,
             bytes32 report,
             uint ownerPrice,
@@ -282,8 +273,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         attributesHash = proof[_tokenId][_diamond.currentHashingAlgorithm];
 
         return (
-            ownerOf(_tokenId),
-            _diamond.custodian,
             _diamond.issuer,
             _diamond.report,
             getOwnerPrice(_tokenId),

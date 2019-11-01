@@ -44,7 +44,7 @@ contract DpassTest is DSTest {
     Dpass dpass;
     DpassTester user;
     bytes32[] attributes = new bytes32[](4);
-    bytes8 hasningAlgorithm = "20190101";
+    bytes8 hashingAlgorithm = "20190101";
     bytes32 attributesHash;
     address custodian;
 
@@ -61,7 +61,7 @@ contract DpassTest is DSTest {
         custodian = address(0xf);
 
         dpass.mintDiamondTo(
-            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), custodian, "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hashingAlgorithm
         );
     }
 
@@ -92,7 +92,7 @@ contract DpassTest is DSTest {
     function testFailNonOwnerMintDiamond() public {
         dpass.setOwner(address(0));
         dpass.mintDiamondTo(
-            address(user), "GIA", "02", 1 ether, 1 ether, "sale", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), custodian, "GIA", "02", 1 ether, 1 ether, "sale", attributes, attributesHash, hashingAlgorithm
         );
     }
 
@@ -169,20 +169,20 @@ contract DpassTest is DSTest {
 
     function testFailMintNonUniqDiamond() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), custodian, "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hashingAlgorithm
         );
     }
 
     function testLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), custodian, "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hashingAlgorithm
         );
         dpass.linkOldToNewToken(1, 2);
     }
 
     function testFailNotExistLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hasningAlgorithm, custodian
+            address(user), custodian, "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hashingAlgorithm
         );
         dpass.linkOldToNewToken(1, 100);
     }
