@@ -76,8 +76,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     mapping (uint => mapping(bytes32 => bytes32)) public proof;  // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
     mapping (bytes32 => mapping (bytes32 => uint)) diamondIndex; // List of dpasses by issuer and report number [issuer][number]
     mapping (uint256 => uint256) public recreated;               // List of recreated tokens. old tokenId => new tokenId
-    mapping (address => bool) public custodianInRed;             // List of recreated tokens. old tokenId => new tokenId
-
 
     constructor () public ERC721Full(_name, _symbol) {
         // Create dummy diamond to start real diamond minting from 1
@@ -165,6 +163,46 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     /**
+    * @dev Custom accessor to create a unique token
+    * @param _to address of diamond owner
+    * @param _issuer string the issuer agency name
+    * @param _report string the issuer agency unique Nr.
+    * @param _ownerPrice uint diamond price
+    * @param _marketplacePrice uint diamond price
+    * @param _state diamond state, "sale" is the init status
+    * @param _attributes diamond Rapaport attributes
+    * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
+    * @param _custodian the custodian of minted dpass
+    * @return Return Diamond tokenId of the diamonds list
+    */
+    function mintDiamondToAsm(
+        address _custodian,
+        bytes32 _issuer,
+        bytes32 _report,
+        uint _ownerPrice,
+        uint _marketplacePrice,
+        bytes32 _state,
+        bytes32[] memory _attributes,
+        bytes32 _attributesHash,
+        bytes8 _currentHashingAlgorithm
+    )
+        public auth
+        returns(uint)
+    {
+        mintDiamondTo(
+            asm,
+            _custodian,
+            _issuer,
+            _report,
+            _ownerPrice,
+            _marketplacePrice,
+            _state,
+            _attributes,
+            _attributeHash,
+            _currentHashingAlgorithm);
+    }
+
+    /**
     * @dev Update _tokenId attributes
     * @param _attributesHash new attibutes hash value
     * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
@@ -206,21 +244,11 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     /*
-    * @dev set red flag on custodian. This means that a critical security breach has happened at custodian.
-    * This means that all the transfers are temporarily prohibited.
-    */
-    function setRedFlag(address _custodian, bool _redFlag) public auth {
-        custodianInRed[_custodian] = _redFlag;
-        emit CustodianRedFlag(_custodian, _redFlag);
-    }
-
-    /*
     * @dev Check if transferPossible
     */
     function _checkTransfer(uint256 _tokenId) internal view {
-        (,,,,bytes32 state,,,) = getDiamond(_tokenId);
+        bytes32 state = diamonds[_tokenId].state;
 
-        require(!custodianInRed[getCustodian(_tokenId)], "Custodian red flag");
         require(state != "removed", "Token has been removed");
         require(state != "invalid", "Token deleted");
     }
@@ -334,6 +362,15 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         require(_newCustodian != address(0), "Wrong address");
         custodian[_tokenId] = _newCustodian;
         emit LogCustodianChanged(_tokenId, _newCustodian);
+    }
+
+    /**
+     * @dev Set asset management contract
+     */
+    function setAsm(address _asm) public auth {
+        require(_asm != address(0), "Wrong address");
+        asm = _asm;
+        emit LogAsmChanged(_asm);
     }
 
     /**
