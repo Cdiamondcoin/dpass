@@ -11,10 +11,6 @@ contract DpassTester {
         _dpass = dpass;
     }
 
-    function doSetOwnerPrice(uint tokenId, uint price) public {
-        _dpass.setOwnerPrice(tokenId, price);
-    }
-
     function doSetSaleStatus(uint tokenId) public {
         _dpass.setSaleStatus(tokenId);
     }
@@ -61,7 +57,7 @@ contract DpassTest is DSTest {
         custodian = address(0xf);
 
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hashingAlgorithm
+            address(user), custodian, "GIA", "01", "init", attributes, attributesHash, hashingAlgorithm
         );
     }
 
@@ -92,7 +88,7 @@ contract DpassTest is DSTest {
     function testFailNonOwnerMintDiamond() public {
         dpass.setOwner(address(0));
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "02", 1 ether, 1 ether, "sale", attributes, attributesHash, hashingAlgorithm
+            address(user), custodian, "GIA", "02", "sale", attributes, attributesHash, hashingAlgorithm
         );
     }
 
@@ -100,23 +96,15 @@ contract DpassTest is DSTest {
         assertEq(dpass.ownerOf(1), address(user));
     }
 
-    function testPriceChange() public {
-        user.doSetOwnerPrice(1, 2 ether);
-        assertEq(dpass.getPrice(1), 2 ether);
-    }
-
     function testSaleStatusChange() public {
         user.doSetSaleStatus(1);
         bytes32 issuer;
         bytes32 report;
-        uint ownerPrice;
-        uint marketplacePrice;
         bytes32 state;
-        bytes32[] memory names;
         bytes32[] memory attrs;
         bytes32 attrsHash;
 
-        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, state, attrs, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "sale");
         assertEq32(attrsHash, attributesHash);
     }
@@ -125,14 +113,11 @@ contract DpassTest is DSTest {
         user.doRedeem(1);
         bytes32 issuer;
         bytes32 report;
-        uint ownerPrice;
-        uint marketplacePrice;
         bytes32 state;
-        bytes32[] memory names;
         bytes32[] memory attrs;
         bytes32 attrsHash;
 
-        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, state, attrs, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "redeemed");
         assertEq(dpass.ownerOf(1), dpass.owner());
     }
@@ -140,27 +125,17 @@ contract DpassTest is DSTest {
     function testAttributeValue() public {
         bytes32 issuer;
         bytes32 report;
-        uint ownerPrice;
-        uint marketplacePrice;
         bytes32 state;
-        bytes32[] memory names;
         bytes32[] memory attrs;
         bytes32 attrsHash;
 
-        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
-        bytes32[] memory defaultNames = dpass.getAttributeNames();
+        (issuer, report, state, attrs, attrsHash) = dpass.getDiamond(1);
 
         // Values
         assertEq(attrs[0], "Round");
         assertEq(attrs[1], "0.71");
         assertEq(attrs[2], "F");
         assertEq(attrs[3], "IF");
-
-        // Names
-        assertEq(names[0], defaultNames[0]);
-        assertEq(names[1], defaultNames[1]);
-        assertEq(names[2], defaultNames[2]);
-        assertEq(names[3], defaultNames[3]);
     }
 
     function testFailGetNonExistDiamond() public view {
@@ -169,20 +144,20 @@ contract DpassTest is DSTest {
 
     function testFailMintNonUniqDiamond() public {
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "01", 1 ether, 1 ether, "init", attributes, attributesHash, hashingAlgorithm
+            address(user), custodian, "GIA", "01", "init", attributes, attributesHash, hashingAlgorithm
         );
     }
 
     function testLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hashingAlgorithm
+            address(user), custodian, "GIA", "02", "init", attributes, attributesHash, hashingAlgorithm
         );
         dpass.linkOldToNewToken(1, 2);
     }
 
     function testFailNotExistLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "02", 1 ether, 1 ether, "init", attributes, attributesHash, hashingAlgorithm
+            address(user), custodian, "GIA", "02", "init", attributes, attributesHash, hashingAlgorithm
         );
         dpass.linkOldToNewToken(1, 100);
     }
@@ -192,25 +167,16 @@ contract DpassTest is DSTest {
 
         bytes32 issuer;
         bytes32 report;
-        uint ownerPrice;
-        uint marketplacePrice;
         bytes32 state;
-        bytes32[] memory names;
         bytes32[] memory attrs;
         bytes32 attrsHash;
 
-        (issuer, report, ownerPrice, marketplacePrice, state, names, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report,  state, attrs, attrsHash) = dpass.getDiamond(1);
         assertEq(state, "new_state");
     }
 
     function testFailNonOwnerChangeState() public {
         user.doChangeStateTo("new_state", 1);
-    }
-
-    function testgetAttributeNamesAsString() public {
-        string memory names;
-        names = dpass.getAttributeNamesAsString();
-        assertEq0(bytes(names), bytes("shape;weight;color;clarity;"));
     }
 
     function testSetCustodian() public {
@@ -229,18 +195,6 @@ contract DpassTest is DSTest {
 
     function testSafeTransfer() public {
         dpass.setCustodian(1, address(0xee));
-        user.doSafeTransferFrom(address(user), address(0xee), 1);
-    }
-
-    function testFailRedFlaggedCustodianTransfer() public {
-        dpass.setCustodian(1, address(0xee));
-        dpass.setRedFlag(address(0xee),true);
-        user.doTransferFrom(address(user), address(0xee), 1);
-    }
-
-    function testFailRedFlaggedCustodianSafeTransfer() public {
-        dpass.setCustodian(1, address(0xee));
-        dpass.setRedFlag(address(0xee),true);
         user.doSafeTransferFrom(address(user), address(0xee), 1);
     }
 }
