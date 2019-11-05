@@ -23,8 +23,7 @@ contract DpassEvents {
     event LogStateChanged(uint indexed tokenId, bytes32 state);
     event LogSale(uint indexed tokenId);
     event LogRedeem(uint indexed tokenId);
-    event LogSetAttributeNameListAddress(address priceFeed);
-    event LogSetTrustedAssetManagement(address asm);
+    event LogSetTrustedAssetManagementInterface(address asm);
     event LogHashingAlgorithmChange(bytes8 name);
     event LogDiamondAttributesHashChange(uint indexed tokenId, bytes8 hashAlgorithm);
     event LogCustodianChanged(uint tokenId, address custodian);
@@ -51,6 +50,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     mapping (uint => mapping(bytes32 => bytes32)) public proof;  // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
     mapping (bytes32 => mapping (bytes32 => bool)) diamondIndex; // List of dpasses by issuer and report number [issuer][number]
     mapping (uint256 => uint256) public recreated;               // List of recreated tokens. old tokenId => new tokenId
+    mapping(bytes32 => mapping(bytes32 => bool)) public canTransit; // List of state transition rules in format from => to = true/false
 
     constructor () public ERC721Full(_name, _symbol) {
         // Create dummy diamond to start real diamond minting from 1
@@ -64,6 +64,13 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
         diamonds.push(_diamond);
         _mint(address(this), 0);
+
+        // Transition rules
+        canTransit["valid"]["invalid"] = true;
+        canTransit["valid"]["sale"] = true;
+        canTransit["valid"]["redeemed"] = true;
+        canTransit["sale"]["valid"] = true;
+        canTransit["sale"]["invalid"] = true;
     }
 
     modifier onlyOwnerOf(uint _tokenId) {
@@ -301,6 +308,20 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     /**
+     * @dev Enable transition _from -> _to state
+    */
+    function enableTransition(bytes32 _from, bytes32 _to) public auth {
+        canTransit[_from][_to] = true;
+    }
+
+    /**
+     * @dev Disable transition _from -> _to state
+    */
+    function disableTransition(bytes32 _from, bytes32 _to) public auth {
+        canTransit[_from][_to] = false;
+    }
+
+    /**
      * @dev Set Diamond sale status
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint representing the index to be accessed of the diamonds list
@@ -347,8 +368,9 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _currentState current diamond state
      * @param _newState new diamond state
      */
-    function _validateStateTransitionTo(bytes32 _currentState, bytes32 _newState) internal pure {
+    function _validateStateTransitionTo(bytes32 _currentState, bytes32 _newState) internal view {
         require(_currentState != _newState, "Already in that state");
+        require(canTransit[_currentState][_newState], "Transition now allowed");
     }
 
     /**
