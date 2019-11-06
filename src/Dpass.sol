@@ -73,7 +73,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     modifier onlyOwnerOf(uint _tokenId) {
-        require(ownerOf(_tokenId) == msg.sender, "Access denied");
+        require(ownerOf(_tokenId) == msg.sender, "dpass-access-denied");
         _;
     }
 
@@ -82,21 +82,21 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             ownerOf(_tokenId) == msg.sender ||
             isApprovedForAll(ownerOf(_tokenId), msg.sender) ||
             getApproved(_tokenId) == msg.sender
-            , "Access denied");
+            , "dpass-access-denied");
         _;
     }
 
     modifier ifExist(uint _tokenId) {
-        require(_exists(_tokenId), "Diamond does not exist");
+        require(_exists(_tokenId), "dpass-diamond-does-not-exist");
         _;
     }
 
     modifier onlyValid(uint _tokenId) {
         // TODO: DRY, _exists already check
-        require(_exists(_tokenId), "Diamond does not exist");
+        require(_exists(_tokenId), "dpass-diamond-does-not-exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
-        require(_diamond.state != "invalid", "Diamond is invalid");
+        require(_diamond.state != "invalid", "dpass-invalid-diamond");
         _;
     }
 
