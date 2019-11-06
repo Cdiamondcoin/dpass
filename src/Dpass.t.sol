@@ -27,6 +27,10 @@ contract DpassTester {
         _dpass.setCustodian(tokenId, newCustodian);
     }
 
+    function doSetAllowedCccc(bytes32 _cccc, bool allow) public {
+        _dpass.setCccc(_cccc, allow);
+    }
+
     function doTransferFrom(address from, address to, uint256 tokenId) public {
         _dpass.transferFrom(from, to, tokenId);
     }
@@ -38,26 +42,25 @@ contract DpassTester {
 
 contract DpassTest is DSTest {
     Dpass dpass;
-    DpassTester user;
-    bytes32[] attributes = new bytes32[](4);
+    address user;
+    bytes32 cccc;
+    uint24 carat;
     bytes8 hashingAlgorithm = "20190101";
     bytes32 attributesHash;
-    address custodian;
+    address custodian; 
 
     function setUp() public {
         dpass = new Dpass();
-        user = new DpassTester(dpass);
+        user = address(new DpassTester(dpass));
+        custodian = address(new DpassTester(dpass));
 
-        attributes[0] = "Round";
-        attributes[1] = "0.71";
-        attributes[2] = "F";
-        attributes[3] = "IF";
+        cccc = "BR,IF,F,0004";
+        carat = 7;
 
         attributesHash = 0x9694b695489e1bc02e6a2358e56ac5c59c26e2ebe2fffffb7859c842f692e763;
-        custodian = address(0xf);
-
+        dpass.setCccc(cccc, true);
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "01", "valid", attributes, attributesHash, hashingAlgorithm
+            user, custodian, "GIA", "01", "valid", cccc, carat, attributesHash, hashingAlgorithm
         );
     }
 
@@ -74,42 +77,44 @@ contract DpassTest is DSTest {
     }
 
     function testDiamondBalance() public {
-        assertEq(dpass.balanceOf(address(user)), 1);
+        assertEq(dpass.balanceOf(user), 1);
     }
 
     function testFailNonOwnerMintDiamond() public {
         dpass.setOwner(address(0));
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "02", "sale", attributes, attributesHash, hashingAlgorithm
+            user, custodian, "GIA", "02", "sale", cccc, carat, attributesHash, hashingAlgorithm
         );
     }
 
     function testOwnershipOfNewDiamond() public {
-        assertEq(dpass.ownerOf(1), address(user));
+        assertEq(dpass.ownerOf(1), user);
     }
 
     function testSaleStatusChange() public {
-        user.doSetSaleStatus(1);
+        DpassTester(user).doSetSaleStatus(1);
         bytes32 issuer;
         bytes32 report;
         bytes32 state;
-        bytes32[] memory attrs;
+        bytes32 _cccc;
+        uint24 _carat;
         bytes32 attrsHash;
 
-        (issuer, report, state, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, state, _cccc, _carat, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "sale");
         assertEq32(attrsHash, attributesHash);
     }
 
     function testRedeemStatusChange() public {
-        user.doRedeem(1);
+        DpassTester(user).doRedeem(1);
         bytes32 issuer;
         bytes32 report;
         bytes32 state;
-        bytes32[] memory attrs;
+        bytes32 _cccc;
+        uint24 _carat;
         bytes32 attrsHash;
 
-        (issuer, report, state, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, state, _cccc, _carat, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "redeemed");
         assertEq(dpass.ownerOf(1), dpass.owner());
     }
@@ -118,16 +123,15 @@ contract DpassTest is DSTest {
         bytes32 issuer;
         bytes32 report;
         bytes32 state;
-        bytes32[] memory attrs;
+        bytes32 _cccc;
+        uint24 _carat;
         bytes32 attrsHash;
 
-        (issuer, report, state, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, state, _cccc, _carat, attrsHash) = dpass.getDiamond(1);
 
         // Values
-        assertEq(attrs[0], "Round");
-        assertEq(attrs[1], "0.71");
-        assertEq(attrs[2], "F");
-        assertEq(attrs[3], "IF");
+        assertEq(_cccc, "BR,IF,F,0004");
+        assertEq(uint(_carat), 7);
     }
 
     function testFailGetNonExistDiamond() public view {
@@ -136,42 +140,48 @@ contract DpassTest is DSTest {
 
     function testFailMintNonUniqDiamond() public {
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "01", "valid", attributes, attributesHash, hashingAlgorithm
+            user, custodian, "GIA", "01", "valid", cccc, carat, attributesHash, hashingAlgorithm
         );
     }
 
     function testLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "02", "valid", attributes, attributesHash, hashingAlgorithm
+            user, custodian, "GIA", "02", "valid", cccc, carat, attributesHash, hashingAlgorithm
         );
         dpass.linkOldToNewToken(1, 2);
     }
 
     function testFailNotExistLinkOldToNewToken() public {
         dpass.mintDiamondTo(
-            address(user), custodian, "GIA", "02", "valid", attributes, attributesHash, hashingAlgorithm
+            user, custodian, "GIA", "02", "valid", cccc, carat, attributesHash, hashingAlgorithm
         );
         dpass.linkOldToNewToken(1, 100);
     }
 
     function testChangeState() public {
-        dpass.changeStateTo("sale", 1);
+        DpassTester(user).doChangeStateTo("sale", 1);
 
         bytes32 issuer;
         bytes32 report;
         bytes32 state;
-        bytes32[] memory attrs;
+        bytes32 _cccc;
+        uint24 _carat;
         bytes32 attrsHash;
 
-        (issuer, report,  state, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report,  state, _cccc, _carat, attrsHash) = dpass.getDiamond(1);
         assertEq(state, "sale");
     }
 
     function testFailNonOwnerChangeState() public {
-        user.doChangeStateTo("sale", 1);
+        DpassTester(custodian).doChangeStateTo("sale", 1);
+    }
+
+    function testFailContractOwnerChangeState() public {
+        dpass.changeStateTo("sale", 1);
     }
 
     function testNewTransition() public {
+        DpassTester(user).doTransferFrom(user, address(this), 1); // this contract must become owner to be able to change state
         bytes32 newState = "newState";
         dpass.enableTransition("valid", newState);
         dpass.changeStateTo(newState, 1);
@@ -179,10 +189,11 @@ contract DpassTest is DSTest {
         bytes32 issuer;
         bytes32 report;
         bytes32 state;
-        bytes32[] memory attrs;
+        bytes32 _cccc;
+        uint24 _carat;
         bytes32 attrsHash;
 
-        (issuer, report, state, attrs, attrsHash) = dpass.getDiamond(1);
+        (issuer, report, state, _cccc, _carat, attrsHash) = dpass.getDiamond(1);
         assertEq(state, newState);
     }
 
@@ -197,16 +208,16 @@ contract DpassTest is DSTest {
     }
 
     function testFailNonAuthSetCustodian() public {
-        user.doSetCustodian(1, address(0xee));
+        DpassTester(user).doSetCustodian(1, address(0xee));
     }
 
     function testTransfer() public {
         dpass.setCustodian(1, address(0xee));
-        user.doTransferFrom(address(user), address(0xee), 1);
+        DpassTester(user).doTransferFrom(user, address(0xee), 1);
     }
 
     function testSafeTransfer() public {
         dpass.setCustodian(1, address(0xee));
-        user.doSafeTransferFrom(address(user), address(0xee), 1);
+        DpassTester(user).doSafeTransferFrom(user, address(0xee), 1);
     }
 }
