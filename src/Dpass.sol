@@ -11,6 +11,9 @@ import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 
 
 contract DpassEvents {
+    event LogAsmChanged(address asm);
+    event LogCustodianChanged(uint tokenId, address custodian);
+    event LogDiamondAttributesHashChange(uint indexed tokenId, bytes8 hashAlgorithm);
     event LogDiamondMinted(
         address owner,
         uint indexed tokenId,
@@ -18,16 +21,11 @@ contract DpassEvents {
         bytes32 report,
         bytes32 state
     );
-
-    event LogAsmChanged(address asm);
-    event LogStateChanged(uint indexed tokenId, bytes32 state);
-    event LogSale(uint indexed tokenId);
-    event LogRedeem(uint indexed tokenId);
-    event LogSetTrustedAssetManagementInterface(address asm);
     event LogHashingAlgorithmChange(bytes8 name);
-    event LogDiamondAttributesHashChange(uint indexed tokenId, bytes8 hashAlgorithm);
-    event LogCustodianChanged(uint tokenId, address custodian);
-    event CustodianRedFlag(address custodian, bool redFlag);
+    event LogRedeem(uint indexed tokenId);
+    event LogSale(uint indexed tokenId);
+    event LogSetTrustedAssetManagementInterface(address asm);
+    event LogStateChanged(uint indexed tokenId, bytes32 state);
 }
 
 
@@ -35,21 +33,21 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     string private _name = "Diamond Passport";
     string private _symbol = "Dpass";
 
-    address public asm;                          // Asset Management contract
+    address public asm;                                             // Asset Management contract
 
     struct Diamond {
         bytes32 issuer;
         bytes32 report;
         bytes32 state;
-        bytes32[] attributeValues;                              // List of Rapaport calc required attributes values
-        bytes8 currentHashingAlgorithm;                         // Current hashing algorithm to check in the proof mapping
+        bytes32[] attributeValues;                                  // List of Rapaport calc required attributes values
+        bytes8 currentHashingAlgorithm;                             // Current hashing algorithm to check in the proof mapping
     }
-    Diamond[] diamonds;                                         // List of Dpasses
+    Diamond[] diamonds;                                             // List of Dpasses
 
-    mapping(uint => address) public custodian;                   // custodian that holds a Dpass token
-    mapping (uint => mapping(bytes32 => bytes32)) public proof;  // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
-    mapping (bytes32 => mapping (bytes32 => bool)) diamondIndex; // List of dpasses by issuer and report number [issuer][number]
-    mapping (uint256 => uint256) public recreated;               // List of recreated tokens. old tokenId => new tokenId
+    mapping(uint => address) public custodian;                      // custodian that holds a Dpass token
+    mapping (uint => mapping(bytes32 => bytes32)) public proof;     // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
+    mapping (bytes32 => mapping (bytes32 => bool)) diamondIndex;    // List of dpasses by issuer and report number [issuer][number]
+    mapping (uint256 => uint256) public recreated;                  // List of recreated tokens. old tokenId => new tokenId
     mapping(bytes32 => mapping(bytes32 => bool)) public canTransit; // List of state transition rules in format from => to = true/false
 
     constructor () public ERC721Full(_name, _symbol) {
