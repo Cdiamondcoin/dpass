@@ -11,7 +11,7 @@ import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
 
 
 contract DpassEvents {
-    event LogAsmChanged(address asm);
+    event LogConfigChange(bytes32 what, bytes32 value1, bytes32 value2);
     event LogCustodianChanged(uint tokenId, address custodian);
     event LogDiamondAttributesHashChange(uint indexed tokenId, bytes8 hashAlgorithm);
     event LogDiamondMinted(
@@ -21,10 +21,8 @@ contract DpassEvents {
         bytes32 report,
         bytes32 state
     );
-    event LogHashingAlgorithmChange(bytes8 name);
     event LogRedeem(uint indexed tokenId);
     event LogSale(uint indexed tokenId);
-    event LogSetTrustedAssetManagementInterface(address asm);
     event LogStateChanged(uint indexed tokenId, bytes32 state);
 }
 
@@ -39,7 +37,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32 issuer;
         bytes32 report;
         bytes32 state;
-        bytes32[] attributeValues;                                  // List of Rapaport calc required attributes values
+        bytes32 cccc;
+        uint24 carat;
         bytes8 currentHashingAlgorithm;                             // Current hashing algorithm to check in the proof mapping
     }
     Diamond[] diamonds;                                             // List of Dpasses
@@ -49,6 +48,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     mapping (bytes32 => mapping (bytes32 => bool)) diamondIndex;    // List of dpasses by issuer and report number [issuer][number]
     mapping (uint256 => uint256) public recreated;                  // List of recreated tokens. old tokenId => new tokenId
     mapping(bytes32 => mapping(bytes32 => bool)) public canTransit; // List of state transition rules in format from => to = true/false
+    mapping(bytes32 => bool) public ccccs;
 
     constructor () public ERC721Full(_name, _symbol) {
         // Create dummy diamond to start real diamond minting from 1
@@ -56,7 +56,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             issuer: "Self",
             report: "0",
             state: "invalid",
-            attributeValues: new bytes32[](1),
+            cccc: "BR,IF,D,0001",
+            carat: 1,
             currentHashingAlgorithm: ""
         });
 
@@ -72,21 +73,30 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     modifier onlyOwnerOf(uint _tokenId) {
-        require(ownerOf(_tokenId) == msg.sender, "Access denied");
+        require(ownerOf(_tokenId) == msg.sender, "dpass-access-denied");
+        _;
+    }
+
+    modifier onlyApproved(uint _tokenId) {
+        require(
+            ownerOf(_tokenId) == msg.sender ||
+            isApprovedForAll(ownerOf(_tokenId), msg.sender) ||
+            getApproved(_tokenId) == msg.sender
+            , "dpass-access-denied");
         _;
     }
 
     modifier ifExist(uint _tokenId) {
-        require(_exists(_tokenId), "Diamond does not exist");
+        require(_exists(_tokenId), "dpass-diamond-does-not-exist");
         _;
     }
 
     modifier onlyValid(uint _tokenId) {
         // TODO: DRY, _exists already check
-        require(_exists(_tokenId), "Diamond does not exist");
+        require(_exists(_tokenId), "dpass-diamond-does-not-exist");
 
         Diamond storage _diamond = diamonds[_tokenId];
-        require(_diamond.state != "invalid", "Diamond is invalid");
+        require(_diamond.state != "invalid", "dpass-invalid-diamond");
         _;
     }
 
@@ -96,7 +106,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @param _issuer string the issuer agency name
     * @param _report string the issuer agency unique Nr.
     * @param _state diamond state, "sale" is the init status
-    * @param _attributes diamond Rapaport attributes
+    * @param _cccc bytes32 cut, clarity, color, and carat class of diamond
+    * @param _carat uint24 carat of diamond with 2 decimals precision
     * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
     * @param _custodian the custodian of minted dpass
     * @return Return Diamond tokenId of the diamonds list
@@ -107,20 +118,23 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32 _issuer,
         bytes32 _report,
         bytes32 _state,
-        bytes32[] memory _attributes,
+        bytes32 _cccc,
+        uint24 _carat,
         bytes32 _attributesHash,
         bytes8 _currentHashingAlgorithm
     )
         public auth
         returns(uint)
     {
+        require(ccccs[_cccc], "dpass-wrong-cccc");
         _addToDiamondIndex(_issuer, _report);
 
         Diamond memory _diamond = Diamond({
             issuer: _issuer,
             report: _report,
             state: _state,
-            attributeValues: _attributes,
+            cccc: _cccc,
+            carat: _carat,
             currentHashingAlgorithm: _currentHashingAlgorithm
         });
         uint _tokenId = diamonds.push(_diamond) - 1;
@@ -137,7 +151,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @param _issuer string the issuer agency name
     * @param _report string the issuer agency unique Nr.
     * @param _state diamond state, "sale" is the init status
-    * @param _attributes diamond Rapaport attributes
+    * @param _cccc bytes32 cut, clarity, color, and carat class of diamond
+    * @param _carat uint24 carat of diamond with 2 decimals precision
     * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
     * @param _custodian the custodian of minted dpass
     * @return Return Diamond tokenId of the diamonds list
@@ -147,11 +162,12 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32 _issuer,
         bytes32 _report,
         bytes32 _state,
-        bytes32[] memory _attributes,
+        bytes32 _cccc,
+        uint24 _carat,
         bytes32 _attributesHash,
         bytes8 _currentHashingAlgorithm
     )
-        public auth
+        public 
         returns(uint)
     {
         mintDiamondTo(
@@ -160,7 +176,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             _issuer,
             _report,
             _state,
-            _attributes,
+            _cccc,
+            _carat,
             _attributesHash,
             _currentHashingAlgorithm);
     }
@@ -188,8 +205,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @dev Link old and the same new dpass
     */
     function linkOldToNewToken(uint _tokenId, uint _newTokenId) public auth {
-        require(_exists(_tokenId), "Old diamond does not exist");
-        require(_exists(_newTokenId), "New diamond does not exist");
+        require(_exists(_tokenId), "dpass-old-diamond-doesnt-exist");
+        require(_exists(_newTokenId), "dpass-new-diamond-doesnt-exist");
         recreated[_tokenId] = _newTokenId;
     }
 
@@ -212,8 +229,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function _checkTransfer(uint256 _tokenId) internal view {
         bytes32 state = diamonds[_tokenId].state;
 
-        require(state != "removed", "Token has been removed");
-        require(state != "invalid", "Token deleted");
+        require(state != "removed", "dpass-token-removed");
+        require(state != "invalid", "dpass-token-deleted");
     }
 
     /**
@@ -253,7 +270,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             bytes32 issuer,
             bytes32 report,
             bytes32 state,
-            bytes32[] memory attributeValues,
+            bytes32 cccc,
+            uint24 carat,
             bytes32 attributesHash
         )
     {
@@ -264,7 +282,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
             _diamond.issuer,
             _diamond.report,
             _diamond.state,
-            _diamond.attributeValues,
+            _diamond.cccc,
+            _diamond.carat,
             attributesHash
         );
     }
@@ -281,10 +300,20 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     /**
+    * @dev Set cccc values that are allowed to be entered for diamonds
+    * @param _cccc bytes32 cccc value that will be enabled/disabled
+    * @param _allowed bool allow or disallow cccc 
+    */
+    function setCccc(bytes32 _cccc, bool _allowed) public auth {
+        ccccs[_cccc] = _allowed;
+        emit LogConfigChange("cccc", _cccc, _allowed ? bytes32("1") : bytes32("0"));
+    }
+
+    /**
      * @dev Set new custodian for dpass
      */
     function setCustodian(uint _tokenId, address _newCustodian) public auth {
-        require(_newCustodian != address(0), "Wrong address");
+        require(_newCustodian != address(0), "dpass-wrong-address");
         custodian[_tokenId] = _newCustodian;
         emit LogCustodianChanged(_tokenId, _newCustodian);
     }
@@ -293,9 +322,9 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @dev Set asset management contract
      */
     function setAsm(address _asm) public auth {
-        require(_asm != address(0), "Wrong address");
+        require(_asm != address(0), "dpass-wrong-address");
         asm = _asm;
-        emit LogAsmChanged(_asm);
+        emit LogConfigChange("asm", bytes32(uint(_asm)), "");
     }
 
     /**
@@ -310,6 +339,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     */
     function enableTransition(bytes32 _from, bytes32 _to) public auth {
         canTransit[_from][_to] = true;
+        emit LogConfigChange("canTransit", _from, _to);
     }
 
     /**
@@ -317,6 +347,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     */
     function disableTransition(bytes32 _from, bytes32 _to) public auth {
         canTransit[_from][_to] = false;
+        emit LogConfigChange("canNotTransit", _from, _to);
     }
 
     /**
@@ -324,7 +355,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      */
-    function setSaleStatus(uint _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
+    function setSaleStatus(uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
         _changeStateTo("sale", _tokenId);
         emit LogSale(_tokenId);
     }
@@ -333,7 +364,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @dev Set Diamond invalid status
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      */
-    function setInvalidStatus(uint _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
+    function setInvalidStatus(uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
         _changeStateTo("invalid", _tokenId);
         _removeDiamondFromIndex(_tokenId);
     }
@@ -355,7 +386,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _newState new token state
      * @param _tokenId represent the index of diamond
      */
-    function changeStateTo(bytes32 _newState, uint _tokenId) public auth ifExist(_tokenId) {
+    function changeStateTo(bytes32 _newState, uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
         _changeStateTo(_newState, _tokenId);
     }
 
@@ -367,8 +398,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _newState new diamond state
      */
     function _validateStateTransitionTo(bytes32 _currentState, bytes32 _newState) internal view {
-        require(_currentState != _newState, "Already in that state");
-        require(canTransit[_currentState][_newState], "Transition now allowed");
+        require(_currentState != _newState, "dpass-already-in-that-state");
+        require(canTransit[_currentState][_newState], "dpass-transition-now-allowed");
     }
 
     /**
@@ -377,7 +408,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _report issuer unique nr.
      */
     function _addToDiamondIndex(bytes32 _issuer, bytes32 _report) internal {
-        require(!diamondIndex[_issuer][_report], "Issuer and report not unique.");
+        require(!diamondIndex[_issuer][_report], "dpass-issuer-report-not-unique");
         diamondIndex[_issuer][_report] = true;
     }
 
