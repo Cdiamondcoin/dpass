@@ -77,6 +77,15 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         _;
     }
 
+    modifier onlyApproved(uint _tokenId) {
+        require(
+            ownerOf(_tokenId) == msg.sender ||
+            isApprovedForAll(ownerOf(_tokenId), msg.sender) ||
+            getApproved(_tokenId) == msg.sender
+            , "Access denied");
+        _;
+    }
+
     modifier ifExist(uint _tokenId) {
         require(_exists(_tokenId), "Diamond does not exist");
         _;
@@ -346,7 +355,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      */
-    function setSaleStatus(uint _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
+    function setSaleStatus(uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
         _changeStateTo("sale", _tokenId);
         emit LogSale(_tokenId);
     }
@@ -355,7 +364,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @dev Set Diamond invalid status
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      */
-    function setInvalidStatus(uint _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
+    function setInvalidStatus(uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
         _changeStateTo("invalid", _tokenId);
         _removeDiamondFromIndex(_tokenId);
     }
@@ -377,7 +386,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _newState new token state
      * @param _tokenId represent the index of diamond
      */
-    function changeStateTo(bytes32 _newState, uint _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
+    function changeStateTo(bytes32 _newState, uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
         _changeStateTo(_newState, _tokenId);
     }
 
