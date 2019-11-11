@@ -262,6 +262,38 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      * @return Returns all the relevant information about a specific diamond
      */
+    function getDiamondAll(uint _tokenId)
+        public
+        view
+        ifExist(_tokenId)
+        returns (
+            bytes32[6] memory attrs,
+            address[2] memory ownerCustodian,
+            uint24 carat_
+        )
+    {
+        Diamond storage _diamond = diamonds[_tokenId];
+        bytes32 attributesHash = proof[_tokenId][_diamond.currentHashingAlgorithm];
+
+        attrs[0] = _diamond.issuer;
+        attrs[1] = _diamond.report;
+        attrs[2] = _diamond.state;
+        attrs[3] = _diamond.cccc;
+        attrs[4] = attributesHash;
+        attrs[5] = _diamond.currentHashingAlgorithm;
+
+        ownerCustodian[0] = ownerOf(_tokenId);
+        ownerCustodian[1] = custodian[_tokenId];
+        
+        carat_ = _diamond.carat;
+    }
+
+    /**
+     * @dev Gets the Diamond at a given _tokenId of all the diamonds in this contract
+     * Reverts if the _tokenId is greater or equal to the total number of diamonds
+     * @param _tokenId uint representing the index to be accessed of the diamonds list
+     * @return Returns all the relevant information about a specific diamond
+     */
     function getDiamond(uint _tokenId)
         public
         view

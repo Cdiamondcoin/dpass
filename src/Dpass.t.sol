@@ -87,6 +87,25 @@ contract DpassTest is DSTest {
         );
     }
 
+    function testGetDiamondAll() public {
+        bytes32[6] memory attrs;
+        address[2] memory ownerCustodian;
+        uint24 carat_;
+        (attrs, ownerCustodian, carat_) = dpass.getDiamondAll(1);
+
+        assertEq(attrs[0], "GIA");
+        assertEq(attrs[1], "01");
+        assertEq(attrs[2], "valid");
+        assertEq(attrs[3], cccc);
+        assertEq(attrs[4], attributesHash);
+        assertEq(attrs[5], hashingAlgorithm);
+
+        assertEq(ownerCustodian[0], user);
+        assertEq(ownerCustodian[1], custodian);
+
+        assertEq(uint(carat_), uint(carat));
+    }
+
     function testOwnershipOfNewDiamond() public {
         assertEq(dpass.ownerOf(1), user);
     }
