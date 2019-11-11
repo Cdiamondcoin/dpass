@@ -88,10 +88,10 @@ contract DpassTest is DSTest {
     }
 
     function testGetDiamondAll() public {
-        bytes32[6] memory attrs;
         address[2] memory ownerCustodian;
+        bytes32[6] memory attrs;
         uint24 carat_;
-        (attrs, ownerCustodian, carat_) = dpass.getDiamondAll(1);
+        (ownerCustodian, attrs, carat_) = dpass.getDiamondAll(1);
 
         assertEq(attrs[0], "GIA");
         assertEq(attrs[1], "01");

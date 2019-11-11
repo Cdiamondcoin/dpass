@@ -267,8 +267,8 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         view
         ifExist(_tokenId)
         returns (
-            bytes32[6] memory attrs,
             address[2] memory ownerCustodian,
+            bytes32[6] memory attrs,
             uint24 carat_
         )
     {
