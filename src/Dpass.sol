@@ -275,6 +275,9 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         Diamond storage _diamond = diamonds[_tokenId];
         bytes32 attributesHash = proof[_tokenId][_diamond.currentHashingAlgorithm];
 
+        ownerCustodian[0] = ownerOf(_tokenId);
+        ownerCustodian[1] = custodian[_tokenId];
+        
         attrs[0] = _diamond.issuer;
         attrs[1] = _diamond.report;
         attrs[2] = _diamond.state;
@@ -282,9 +285,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         attrs[4] = attributesHash;
         attrs[5] = _diamond.currentHashingAlgorithm;
 
-        ownerCustodian[0] = ownerOf(_tokenId);
-        ownerCustodian[1] = custodian[_tokenId];
-        
         carat_ = _diamond.carat;
     }
 
