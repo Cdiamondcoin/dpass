@@ -13,6 +13,3 @@
 [submodule "lib/openzeppelin-solidity"]
 	path = lib/openzeppelin-solidity
 	url = https://github.com/OpenZeppelin/openzeppelin-solidity
-[submodule "lib/cdc-token"]
-	path = lib/cdc-token
-	url = https://github.com/Cdiamondcoin/cdc-token.git
