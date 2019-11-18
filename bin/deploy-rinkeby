@@ -6,7 +6,7 @@
 ### geth - https://github.com/ethereum/go-ethereum/wiki/Backup-&-restore
 ### parity - https://ethereum.stackexchange.com/questions/6471/where-are-my-keys-and-chain-data-located-if-i-am-using-parity
 
-set -ex
+set -x
 
 ## Settings for test networks like Rinkeby, Kovan, Ropsten
 
@@ -23,6 +23,7 @@ export NETWORK=$(seth chain)
 
 # export ETH_FROM=$(seth rpc eth_coinbase)
 export ETH_FROM=0x9556E25F9b4D343ee38348b6Db8691d10fD08A61
+export ETH_PASSWORD=~/.eth-pwd
 
 test -z $NETWORK && exit 1
 
