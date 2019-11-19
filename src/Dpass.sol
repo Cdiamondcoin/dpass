@@ -262,7 +262,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      * @return Returns all the relevant information about a specific diamond
      */
-    function getDiamondAll(uint _tokenId)
+    function getDiamondInfo(uint _tokenId)
         public
         view
         ifExist(_tokenId)

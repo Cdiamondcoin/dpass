@@ -49,6 +49,11 @@ contract DpassTest is DSTest {
     bytes32 attributesHash;
     address custodian; 
 
+    event LogTest(uint256 what);
+    event LogTest(bool what);
+    event LogTest(address what);
+    event LogTest(bytes32 what);
+    
     function setUp() public {
         dpass = new Dpass();
         user = address(new DpassTester(dpass));
@@ -80,6 +85,14 @@ contract DpassTest is DSTest {
         assertEq(dpass.balanceOf(user), 1);
     }
 
+    function testOwnerMintDiamond() public logs_gas {
+        uint gas = gasleft();
+        dpass.mintDiamondTo(
+            user, custodian, "GIA", "02", "sale", cccc, carat, attributesHash, hashingAlgorithm
+        );
+        emit LogTest(gas - gasleft());
+    }
+
     function testFailNonOwnerMintDiamond() public {
         dpass.setOwner(address(0));
         dpass.mintDiamondTo(
@@ -91,7 +104,7 @@ contract DpassTest is DSTest {
         address[2] memory ownerCustodian;
         bytes32[6] memory attrs;
         uint24 carat_;
-        (ownerCustodian, attrs, carat_) = dpass.getDiamondAll(1);
+        (ownerCustodian, attrs, carat_) = dpass.getDiamondInfo(1);
 
         assertEq(attrs[0], "GIA");
         assertEq(attrs[1], "01");
