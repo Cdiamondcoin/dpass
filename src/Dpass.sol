@@ -242,7 +242,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         if (diamonds[_tokenId].state == "sale" &&
             canTransit["sale"]["valid"]) {
 
-            changeStateTo("valid", _tokenId);
+            _changeStateTo("valid", _tokenId);
         }
     }
 
