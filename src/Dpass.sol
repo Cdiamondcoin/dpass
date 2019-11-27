@@ -167,7 +167,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         bytes32 _attributesHash,
         bytes8 _currentHashingAlgorithm
     )
-        public 
+        public
         returns(uint)
     {
         mintDiamondTo(
@@ -220,6 +220,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      */
     function transferFrom(address _from, address _to, uint256 _tokenId) public onlyValid(_tokenId) {
         _checkTransfer(_tokenId);
+        _removeSaleStatus(_tokenId);
         super.transferFrom(_from, _to, _tokenId);
     }
 
@@ -231,6 +232,18 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
         require(state != "removed", "dpass-token-removed");
         require(state != "invalid", "dpass-token-deleted");
+    }
+
+    /*
+    * @dev Remove "sale" status when token is transfered to avoid accidental listing
+    */
+    function _removeSaleStatus(uint256 _tokenId) internal {
+
+        if (diamonds[_tokenId].state == "sale" &&
+            canTransit["sale"]["valid"]) {
+
+            changeStateTo("valid", _tokenId);
+        }
     }
 
     /**
@@ -246,6 +259,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      */
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) public {
         _checkTransfer(_tokenId);
+        _removeSaleStatus(_tokenId);
         super.safeTransferFrom(_from, _to, _tokenId);
     }
 
@@ -255,7 +269,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function getState(uint _tokenId) public view ifExist(_tokenId) returns (bytes32) {
         return diamonds[_tokenId].state;
     }
-                                                         
+
     /**
      * @dev Gets the Diamond at a given _tokenId of all the diamonds in this contract
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
@@ -277,7 +291,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
         ownerCustodian[0] = ownerOf(_tokenId);
         ownerCustodian[1] = custodian[_tokenId];
-        
+
         attrs[0] = _diamond.issuer;
         attrs[1] = _diamond.report;
         attrs[2] = _diamond.state;
@@ -334,7 +348,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     /**
     * @dev Set cccc values that are allowed to be entered for diamonds
     * @param _cccc bytes32 cccc value that will be enabled/disabled
-    * @param _allowed bool allow or disallow cccc 
+    * @param _allowed bool allow or disallow cccc
     */
     function setCccc(bytes32 _cccc, bool _allowed) public auth {
         ccccs[_cccc] = _allowed;

@@ -248,6 +248,13 @@ contract DpassTest is DSTest {
         DpassTester(user).doTransferFrom(user, address(0xee), 1);
     }
 
+    function testTransferUnsetSaleState() public {
+        DpassTester(user).doSetSaleStatus(1);
+        assertEq(dpass.getState(1), "sale");
+        DpassTester(user).doTransferFrom(user, address(0xee), 1);
+        assertEq(dpass.getState(1), "valid");
+    }
+
     function testSafeTransfer() public {
         dpass.setCustodian(1, address(0xee));
         DpassTester(user).doSafeTransferFrom(user, address(0xee), 1);
