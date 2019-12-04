@@ -17,9 +17,9 @@ contract DpassEvents {
     event LogDiamondMinted(
         address owner,
         uint indexed tokenId,
-        bytes32 issuer,
-        bytes32 report,
-        bytes32 state
+        bytes3 issuer,
+        bytes16 report,
+        bytes8 state
     );
     event LogRedeem(uint indexed tokenId);
     event LogSale(uint indexed tokenId);
@@ -34,17 +34,17 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     address public asm;                                             // Asset Management contract
 
     struct Diamond {
-        bytes32 issuer;
-        bytes32 report;
-        bytes32 state;
-        bytes32 cccc;
+        bytes3 issuer;
+        bytes16 report;
+        bytes8 state;
+        bytes20 cccc;
         uint24 carat;
         bytes8 currentHashingAlgorithm;                             // Current hashing algorithm to check in the proof mapping
     }
     Diamond[] diamonds;                                             // List of Dpasses
 
     mapping(uint => address) public custodian;                      // custodian that holds a Dpass token
-    mapping (uint => mapping(bytes32 => bytes32)) public proof;     // Prof of attributes integrity [tokenId][hasningAlgorithm] => hash
+    mapping (uint => mapping(bytes32 => bytes32)) public proof;     // Prof of attributes integrity [tokenId][hashingAlgorithm] => hash
     mapping (bytes32 => mapping (bytes32 => bool)) diamondIndex;    // List of dpasses by issuer and report number [issuer][number]
     mapping (uint256 => uint256) public recreated;                  // List of recreated tokens. old tokenId => new tokenId
     mapping(bytes32 => mapping(bytes32 => bool)) public canTransit; // List of state transition rules in format from => to = true/false
@@ -53,7 +53,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     constructor () public ERC721Full(_name, _symbol) {
         // Create dummy diamond to start real diamond minting from 1
         Diamond memory _diamond = Diamond({
-            issuer: "Self",
+            issuer: "Slf",
             report: "0",
             state: "invalid",
             cccc: "BR,IF,D,0001",
@@ -115,10 +115,10 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     function mintDiamondTo(
         address _to,
         address _custodian,
-        bytes32 _issuer,
-        bytes32 _report,
-        bytes32 _state,
-        bytes32 _cccc,
+        bytes3 _issuer,
+        bytes16 _report,
+        bytes8 _state,
+        bytes20 _cccc,
         uint24 _carat,
         bytes32 _attributesHash,
         bytes8 _currentHashingAlgorithm
@@ -144,42 +144,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         _mint(_to, _tokenId);
         emit LogDiamondMinted(_to, _tokenId, _issuer, _report, _state);
         return _tokenId;
-    }
-
-    /**
-    * @dev Custom accessor to create a unique token
-    * @param _issuer string the issuer agency name
-    * @param _report string the issuer agency unique Nr.
-    * @param _state diamond state, "sale" is the init status
-    * @param _cccc bytes32 cut, clarity, color, and carat class of diamond
-    * @param _carat uint24 carat of diamond with 2 decimals precision
-    * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
-    * @param _custodian the custodian of minted dpass
-    * @return Return Diamond tokenId of the diamonds list
-    */
-    function mintDiamondToAsm(
-        address _custodian,
-        bytes32 _issuer,
-        bytes32 _report,
-        bytes32 _state,
-        bytes32 _cccc,
-        uint24 _carat,
-        bytes32 _attributesHash,
-        bytes8 _currentHashingAlgorithm
-    )
-        public
-        returns(uint)
-    {
-        mintDiamondTo(
-            asm,
-            _custodian,
-            _issuer,
-            _report,
-            _state,
-            _cccc,
-            _carat,
-            _attributesHash,
-            _currentHashingAlgorithm);
     }
 
     /**
@@ -220,7 +184,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      */
     function transferFrom(address _from, address _to, uint256 _tokenId) public onlyValid(_tokenId) {
         _checkTransfer(_tokenId);
-        _removeSaleStatus(_tokenId);
         super.transferFrom(_from, _to, _tokenId);
     }
 
@@ -232,18 +195,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
         require(state != "removed", "dpass-token-removed");
         require(state != "invalid", "dpass-token-deleted");
-    }
-
-    /*
-    * @dev Remove "sale" status when token is transfered to avoid accidental listing
-    */
-    function _removeSaleStatus(uint256 _tokenId) internal {
-
-        if (diamonds[_tokenId].state == "sale" &&
-            canTransit["sale"]["valid"]) {
-
-            _changeStateTo("valid", _tokenId);
-        }
     }
 
     /**
@@ -259,7 +210,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      */
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) public {
         _checkTransfer(_tokenId);
-        _removeSaleStatus(_tokenId);
         super.safeTransferFrom(_from, _to, _tokenId);
     }
 
@@ -313,10 +263,10 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         view
         ifExist(_tokenId)
         returns (
-            bytes32 issuer,
-            bytes32 report,
-            bytes32 state,
-            bytes32 cccc,
+            bytes3 issuer,
+            bytes16 report,
+            bytes8 state,
+            bytes20 cccc,
             uint24 carat,
             bytes32 attributesHash
         )
@@ -432,7 +382,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _newState new token state
      * @param _tokenId represent the index of diamond
      */
-    function changeStateTo(bytes32 _newState, uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
+    function changeStateTo(bytes8 _newState, uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
         _changeStateTo(_newState, _tokenId);
     }
 
@@ -443,7 +393,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _currentState current diamond state
      * @param _newState new diamond state
      */
-    function _validateStateTransitionTo(bytes32 _currentState, bytes32 _newState) internal view {
+    function _validateStateTransitionTo(bytes8 _currentState, bytes8 _newState) internal view {
         require(_currentState != _newState, "dpass-already-in-that-state");
         require(canTransit[_currentState][_newState], "dpass-transition-now-allowed");
     }
@@ -468,7 +418,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      * @param _newState new token state
      * @param _tokenId represent the index of diamond
      */
-    function _changeStateTo(bytes32 _newState, uint _tokenId) internal {
+    function _changeStateTo(bytes8 _newState, uint _tokenId) internal {
         Diamond storage _diamond = diamonds[_tokenId];
         _validateStateTransitionTo(_diamond.state, _newState);
         _diamond.state = _newState;
