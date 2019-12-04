@@ -11,16 +11,16 @@ contract DpassTester {
         _dpass = dpass;
     }
 
-    function doSetSaleStatus(uint tokenId) public {
-        _dpass.setSaleStatus(tokenId);
+    function doSetSaleState(uint tokenId) public {
+        _dpass.setSaleState(tokenId);
     }
 
     function doRedeem(uint tokenId) public {
         _dpass.redeem(tokenId);
     }
 
-    function doChangeStateTo(bytes8 state, uint tokenId) public {
-        _dpass.changeStateTo(state, tokenId);
+    function doSetState(bytes8 state, uint tokenId) public {
+        _dpass.setState(state, tokenId);
     }
 
     function doSetCustodian(uint tokenId, address newCustodian) public {
@@ -123,8 +123,8 @@ contract DpassTest is DSTest {
         assertEq(dpass.ownerOf(1), user);
     }
 
-    function testSaleStatusChange() public {
-        DpassTester(user).doSetSaleStatus(1);
+    function testSetSaleState() public {
+        DpassTester(user).doSetSaleState(1);
         bytes32 issuer;
         bytes32 report;
         bytes32 state;
@@ -137,7 +137,7 @@ contract DpassTest is DSTest {
         assertEq32(attrsHash, attributesHash);
     }
 
-    function testRedeemStatusChange() public {
+    function testSetRedeemState() public {
         DpassTester(user).doRedeem(1);
         bytes32 issuer;
         bytes32 report;
@@ -190,8 +190,8 @@ contract DpassTest is DSTest {
         dpass.linkOldToNewToken(1, 100);
     }
 
-    function testChangeState() public {
-        DpassTester(user).doChangeStateTo("sale", 1);
+    function testSetState() public {
+        DpassTester(user).doSetState("sale", 1);
 
         bytes32 issuer;
         bytes32 report;
@@ -205,18 +205,18 @@ contract DpassTest is DSTest {
     }
 
     function testFailNonOwnerChangeState() public {
-        DpassTester(custodian).doChangeStateTo("sale", 1);
+        DpassTester(custodian).doSetState("sale", 1);
     }
 
     function testFailContractOwnerChangeState() public {
-        dpass.changeStateTo("sale", 1);
+        dpass.setState("sale", 1);
     }
 
     function testNewTransition() public {
         DpassTester(user).doTransferFrom(user, address(this), 1); // this contract must become owner to be able to change state
         bytes8 newState = "newState";
         dpass.enableTransition("valid", newState);
-        dpass.changeStateTo(newState, 1);
+        dpass.setState(newState, 1);
 
         bytes3 issuer;
         bytes16 report;
@@ -231,7 +231,7 @@ contract DpassTest is DSTest {
 
     function testFailDisabledTransition() public {
         dpass.disableTransition("valid", "sale");
-        dpass.changeStateTo("sale", 1);
+        dpass.setState("sale", 1);
     }
 
     function testSetCustodian() public {
@@ -247,14 +247,7 @@ contract DpassTest is DSTest {
         dpass.setCustodian(1, address(0xee));
         DpassTester(user).doTransferFrom(user, address(0xee), 1);
     }
-/*
-    function testTransferUnsetSaleState() public {
-        DpassTester(user).doSetSaleStatus(1);
-        assertEq(dpass.getState(1), "sale");
-        DpassTester(user).doTransferFrom(user, address(0xee), 1);
-        assertEq(dpass.getState(1), "valid");
-    }
-*/
+
     function testSafeTransfer() public {
         dpass.setCustodian(1, address(0xee));
         DpassTester(user).doSafeTransferFrom(user, address(0xee), 1);

@@ -105,7 +105,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     * @param _to address of diamond owner
     * @param _issuer string the issuer agency name
     * @param _report string the issuer agency unique Nr.
-    * @param _state diamond state, "sale" is the init status
+    * @param _state diamond state, "sale" is the init state
     * @param _cccc bytes32 cut, clarity, color, and carat class of diamond
     * @param _carat uint24 carat of diamond with 2 decimals precision
     * @param _currentHashingAlgorithm name of hasning algorithm (ex. 20190101)
@@ -347,43 +347,43 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     /**
-     * @dev Set Diamond sale status
+     * @dev Set Diamond sale state
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      */
-    function setSaleStatus(uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
-        _changeStateTo("sale", _tokenId);
+    function setSaleState(uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
+        _setState("sale", _tokenId);
         emit LogSale(_tokenId);
     }
 
     /**
-     * @dev Set Diamond invalid status
+     * @dev Set Diamond invalid state
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      */
-    function setInvalidStatus(uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
-        _changeStateTo("invalid", _tokenId);
+    function setInvalidState(uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
+        _setState("invalid", _tokenId);
         _removeDiamondFromIndex(_tokenId);
     }
 
     /**
-     * @dev Make diamond status as redeemed, change owner to contract owner
+     * @dev Make diamond state as redeemed, change owner to contract owner
      * Reverts if the _tokenId is greater or equal to the total number of diamonds
      * @param _tokenId uint representing the index to be accessed of the diamonds list
      */
     function redeem(uint _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
-        _changeStateTo("redeemed", _tokenId);
+        _setState("redeemed", _tokenId);
         // TODO: move to safeTransfer?
         transferFrom(msg.sender, owner, _tokenId);
         emit LogRedeem(_tokenId);
     }
 
     /**
-     * @dev Change diamond status.
+     * @dev Change diamond state.
      * @param _newState new token state
      * @param _tokenId represent the index of diamond
      */
-    function changeStateTo(bytes8 _newState, uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
-        _changeStateTo(_newState, _tokenId);
+    function setState(bytes8 _newState, uint _tokenId) public ifExist(_tokenId) onlyApproved(_tokenId) {
+        _setState(_newState, _tokenId);
     }
 
     // Private functions
@@ -414,11 +414,11 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     }
 
     /**
-     * @dev Change diamond status with logging. Revert on invalid transition
+     * @dev Change diamond state with logging. Revert on invalid transition
      * @param _newState new token state
      * @param _tokenId represent the index of diamond
      */
-    function _changeStateTo(bytes8 _newState, uint _tokenId) internal {
+    function _setState(bytes8 _newState, uint _tokenId) internal {
         Diamond storage _diamond = diamonds[_tokenId];
         _validateStateTransitionTo(_diamond.state, _newState);
         _diamond.state = _newState;
