@@ -66,10 +66,12 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
 
         // Transition rules
         canTransit["valid"]["invalid"] = true;
+        canTransit["valid"]["removed"] = true;
         canTransit["valid"]["sale"] = true;
         canTransit["valid"]["redeemed"] = true;
         canTransit["sale"]["valid"] = true;
         canTransit["sale"]["invalid"] = true;
+        canTransit["sale"]["removed"] = true;
     }
 
     modifier onlyOwnerOf(uint _tokenId) {
@@ -372,8 +374,7 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
      */
     function redeem(uint _tokenId) public ifExist(_tokenId) onlyOwnerOf(_tokenId) {
         _setState("redeemed", _tokenId);
-        // TODO: move to safeTransfer?
-        transferFrom(msg.sender, owner, _tokenId);
+        _removeDiamondFromIndex(_tokenId);
         emit LogRedeem(_tokenId);
     }
 
