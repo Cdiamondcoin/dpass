@@ -31,8 +31,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
     string private _name = "Diamond Passport";
     string private _symbol = "Dpass";
 
-    address public asm;                                             // Asset Management contract
-
     struct Diamond {
         bytes3 issuer;
         bytes16 report;
@@ -314,15 +312,6 @@ contract Dpass is DSAuth, ERC721Full, DpassEvents {
         require(_newCustodian != address(0), "dpass-wrong-address");
         custodian[_tokenId] = _newCustodian;
         emit LogCustodianChanged(_tokenId, _newCustodian);
-    }
-
-    /**
-     * @dev Set asset management contract
-     */
-    function setAsm(address _asm) public auth {
-        require(_asm != address(0), "dpass-wrong-address");
-        asm = _asm;
-        emit LogConfigChange("asm", bytes32(uint(_asm)), "");
     }
 
     /**
