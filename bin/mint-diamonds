@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -x
+
+## Settings for test networks like Rinkeby, Kovan, Ropsten
+## Internal settings (do not touch these unless you know what you are doing!!)
+export ETH_RPC_PORT=${ETH_RPC_PORT:-"8545"}
+export ETH_RPC_URL=https://rinkeby.infura.io/v3/47706a887c1245319e35b5e507c7f097
+export ETH_KEYSTORE="$(pwd)"
+export ETH_GAS=8000000
+export ETH_GAS_PRICE=10000000000
+export ETH_FROM=0x9556E25F9b4D343ee38348b6Db8691d10fD08A61
+export ETH_PASSWORD=~/.eth-pwd
+
+
+# bytes32 to bytes $2
+function toBytes () {
+    echo $(python3 -c "b = $2 * 2; print('$1'[:b])")
+}
+
+function hashify () {
+    echo $(python3 -c "from hashlib import sha256; hash = b'$1';  print(f'0x{sha256(hash).hexdigest()}')")
+}
+
+# text to bytes32
+function ttb () {
+    echo $(seth --to-bytes32 $(seth --from-ascii $1))
+}
+
+# eth to uint
+function etu() {
+    echo $(seth --to-uint256 $(seth --to-wei $1 eth))
+}
+
+function mintDpass () {
+    # Minting
+    export issuer=$(toBytes $(ttb $issuer) 3)
+    export report=$(toBytes $(ttb $report) 16)
+    export state=$(toBytes $(ttb $state) 8)
+    # export cccc=$(toBytes $(ttb $cccc) 20)
+    export algorithm=$(toBytes $(ttb $algorithm) 8)
+    export hash=$(hashify $hash)
+    export price=$(etu $price)
+
+    seth send $dpass "setCccc(bytes32,bool)" $(ttb $cccc) true
+    seth send $asm "mintDpass(address,address,bytes3,bytes16,bytes8,bytes20,uint24,bytes32,bytes8,uint256)" $dpass $custodian $issuer $report $state $(toBytes $(ttb $cccc) 20) $carat $hash $algorithm $price
+}
+
+# -------------------------- Mint dpasses -----------------------
+export dpass=0x18a7a95d17f2e7208982922a814d49661f23a073
+export asm=0x16f6afb964acf12697bdbf1fedf3987e457b3f83
+export custodian=0x9556E25F9b4D343ee38348b6Db8691d10fD08A61
+
+# Diamond info #1
+export issuer=GIA
+export report=12328367402
+export state=valid
+export cccc=BR,IF,D,6.00
+export carat=511
+export algorithm=20191118
+export hash=123,1234,234,234,234,23423,4,23423,42,342,34234
+export price=2927.04  # in USD
+#######
+
+mintDpass
+
+# Diamond info #2
+export issuer=GIA
+export report=12328367404
+export state=sale
+export cccc=BR,IF,D,5.00
+export carat=411
+export algorithm=20191118
+export hash=123,1234,234,234,234,23423,4,23423,42,342,34234
+export price=2828.03  # in USD
+#######
+
+mintDpass
+
+set +x
