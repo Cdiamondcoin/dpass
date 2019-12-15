@@ -7,7 +7,7 @@ pragma solidity ^0.5.11;
 //  */
 
 import "ds-auth/auth.sol";
-import "openzeppelin-solidity/token/ERC721/ERC721Full.sol";
+import "openzeppelin-contracts/token/ERC721/ERC721Full.sol";
 
 
 contract DpassEvents {
