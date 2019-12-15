@@ -12,4 +12,4 @@
 	url = https://github.com/dapphub/ds-stop
 [submodule "lib/openzeppelin-solidity"]
 	path = lib/openzeppelin-solidity
-	url = https://github.com/OpenZeppelin/openzeppelin-solidity
+	url = https://github.com/Cdiamondcoin/openzeppelin-solidity
