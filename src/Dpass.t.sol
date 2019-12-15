@@ -148,7 +148,7 @@ contract DpassTest is DSTest {
 
         (issuer, report, state, _cccc, _carat, attrsHash) = dpass.getDiamond(1);
         assertEq32(state, "redeemed");
-        assertEq(dpass.ownerOf(1), dpass.owner());
+        assertEq(dpass.ownerOf(1), user);
     }
 
     function testAttributeValue() public {
