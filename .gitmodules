@@ -10,3 +10,6 @@
 [submodule "lib/ds-stop"]
 	path = lib/ds-stop
 	url = https://github.com/dapphub/ds-stop
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/Cdiamondcoin/openzeppelin-contracts.git
