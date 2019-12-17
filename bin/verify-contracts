@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+import os
+import argparse
+import requests
+import env_file
+
+
+def main(address):
+    """
+    Examples:
+    https://etherscan.io/apis#contracts
+    https://rinkeby.etherscan.io/sourcecode-demo.html
+    """
+    custom_header = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'
+    }
+
+    name = 'Dpass'
+    file_name = 'Dpass-flatt.sol'
+
+    file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out', file_name)
+    with open(file, 'r') as f:
+        contract_content = f.read()
+
+    url = os.environ['ETHERSCAN_URL']
+    data = {
+        'apikey': os.environ['ETHERSCAN_API_KEY'],
+        'module': 'contract',
+        'action': 'verifysourcecode',
+        'contractaddress': address,
+        'sourceCode': contract_content,
+        'codeformat': 'solidity-single-file',
+        'contractname': name,
+        'compilerversion': 'v0.5.11+commit.c082d0b4',
+        'optimizationUsed': '1',
+        'runs': '200',
+        'constructorArguements': '',
+        'licenseType': '7',
+        'evmversion': ''
+    }
+
+    http = requests.session()
+    req = http.post(url, data=data, headers=custom_header)
+    print(req.content)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Verify contract on etherscan')
+    parser.add_argument('address', type=str, help='Address of contract')
+
+    args = parser.parse_args()
+
+    env_file.load(path='.env')
+
+    main(args.address)

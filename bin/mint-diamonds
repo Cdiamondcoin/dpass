@@ -3,11 +3,11 @@ set -x
 
 ## Settings for test networks like Rinkeby, Kovan, Ropsten
 ## Internal settings (do not touch these unless you know what you are doing!!)
+export $(grep -v '^#' .env | xargs)
 export ETH_RPC_PORT=${ETH_RPC_PORT:-"8545"}
-export ETH_RPC_URL=https://rinkeby.infura.io/v3/47706a887c1245319e35b5e507c7f097
 export ETH_KEYSTORE="$(pwd)"
 export ETH_GAS=8000000
-export ETH_GAS_PRICE=10000000000
+export ETH_GAS_PRICE=20000000000
 export ETH_FROM=0x9556E25F9b4D343ee38348b6Db8691d10fD08A61
 export ETH_PASSWORD=~/.eth-pwd
 
@@ -46,47 +46,48 @@ function mintDpass () {
 }
 
 # -------------------------- Mint dpasses -----------------------
-export dpass=0x18a7a95d17f2e7208982922a814d49661f23a073
-export asm=0x16f6afb964acf12697bdbf1fedf3987e457b3f83
 export custodian=0x9556E25F9b4D343ee38348b6Db8691d10fD08A61
+
+export dpass=0x822ea256243cad452b8fc27ebeb67374218de7fb
+export asm=0xd8c2bffbe64b835b65ffcf0dd74cc56a025b948a
 
 # Diamond info #1
 export issuer=GIA
 export report=12328367402
-export state=valid
+export state=sale
 export cccc=BR,IF,D,6.00
 export carat=511
 export algorithm=20191118
 export hash=123,1234,234,234,234,23423,4,23423,42,342,34234
-export price=2927.04  # in USD
+export price=59.99  # in USD
 #######
 
 mintDpass
 
-# Diamond info #2
-export issuer=GIA
-export report=12328367404
-export state=sale
-export cccc=BR,IF,D,5.00
-export carat=411
-export algorithm=20191118
-export hash=123,1234,234,234,234,23423,4,23423,42,342,34234
-export price=2828.03  # in USD
-#######
+# # Diamond info #2
+# export issuer=GIA
+# export report=12328367404
+# export state=sale
+# export cccc=BR,IF,D,5.00
+# export carat=411
+# export algorithm=20191118
+# export hash=123,1234,234,234,234,23423,4,23423,42,342,34234
+# export price=2828.03  # in USD
+# #######
 
-mintDpass
+# mintDpass
 
-# Diamond info #3
-export issuer=GIA
-export report=12328367406
-export state=sale
-export cccc=BR,IF,D,5.00
-export carat=8
-export algorithm=20191118
-export hash=123,1234,234,234,234,23423,4,23423,42,342,34234
-export price=1.03  # in USD
-#######
+# # Diamond info #3
+# export issuer=GIA
+# export report=12328367406
+# export state=sale
+# export cccc=BR,IF,D,5.00
+# export carat=8
+# export algorithm=20191118
+# export hash=123,1234,234,234,234,23423,4,23423,42,342,34234
+# export price=1.03  # in USD
+# #######
 
-mintDpass
+# mintDpass
 
 set +x

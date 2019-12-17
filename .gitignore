@@ -5,3 +5,4 @@ out/
 *.swp
 *.keystore
 env
+.env
