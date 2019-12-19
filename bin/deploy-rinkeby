@@ -15,18 +15,9 @@ export $(grep -v '^#' .env | xargs)
 export ETH_RPC_PORT=${ETH_RPC_PORT:-"8545"}
 export ETH_KEYSTORE="$(pwd)"
 
-# export SOLC_FLAGS=${SOLC_FLAGS:-"--optimize"}
 export SOLC_FLAGS="--optimize"
-export ETH_GAS=${ETH_GAS:-"4000000"}
-# 1000000000 wei = 1 gwei
-export ETH_GAS_PRICE=${ETH_GAS_PRICE:-"10000000000"}
-export NETWORK=$(seth chain)
-
-# export ETH_FROM=$(seth rpc eth_coinbase)
-export ETH_FROM=0x9556E25F9b4D343ee38348b6Db8691d10fD08A61
-export ETH_PASSWORD=~/.eth-pwd
-
-test -z $NETWORK && exit 1
+export ETH_GAS=9965875
+export ETH_GAS_PRICE=20000000000
 
 dapp build --extract
 
