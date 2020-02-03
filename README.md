@@ -1,6 +1,6 @@
 # Diamond network Dpass ERC-721 smart contract
 
-One of the main purposes of [Diamond Network Project](https://cdiamondcoin.com/) is to create a diamond backed stable coin. Each diamond has his own Dpass contract with purchase history, attributes like price, sale ability and etc. To use the services of the platform you will need a utility token called [DPT - Diamond Platform Token](https://github.com/Cdiamondcoin/dpt-token). Current repository contains the [ERC721](https://github.com/ethereum/EIPs/issues/721) compatible smart contract of Dpass token.
+One of the main purposes of [Cdiamondcoin Project](https://cdiamondcoin.com/) is to create a diamond backed-up stablecoin. Each diamond has its own Dpass contract with purchase history, attributes like price, saleability, and others. To use the services of the Platform you will need a utility token called [DPT - Diamond Platform Token.](https://github.com/Cdiamondcoin/dpt-token) Current repository contains the [ERC721](https://github.com/ethereum/EIPs/issues/721) compatible smart contract of Dpass token.
 
 ## Prerequisities
 
